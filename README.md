@@ -1,13 +1,8 @@
 # HarkerQL
 
-### TODO
-- [ ] Finish writing this readme (don't forget authentication)
-
 HarkerQL is an alternative to GraphQL designed to make nested data processing easier and more intuitive.
 
-In terms of usage it is very similar to GraphQL but it also contains a few key differences.
-
-> This readme assumes you have never used GraphQL before and does not make comparisons between HarkerQL and GraphQL.
+In terms of usage it is very similar to GraphQL but it also contains a few key differences. This readme assumes you have never used GraphQL before and does not make comparisons between HarkerQL and GraphQL.
 
 ## How it works
 
@@ -50,10 +45,11 @@ const userFragment = `
   }
 `;
 
+
 `
 {
-  user(id: 123) ${user}
-  user(id: 456) ${user}
+  user(id: 123) ${userFragment}
+  user(id: 456) ${userFragment}
 }
 `
 ```
@@ -254,7 +250,7 @@ In this case, we haven't changed anything at all about our querying technique. T
 
 Note that your object needs to be written in properly formatted JSON.
 
-One thing to note is that `expect` and `demand` treat `Array` differently from `Object`. If you expect an object, don't give it an array, and _vice versa_.
+One other thing to note is that `expect` and `demand` treat `Array` differently from `Object`. If you expect an object, don't give it an array, and _vice versa_.
 
 ### Authentication
 
@@ -316,7 +312,7 @@ This example gets us a token. Great. But now we want to use that token to fetch 
   },
   Team: {
     members: demand([ demand('Person') ]),
-    billingData: demand('BillingData')
+    billingData: expect('BillingData')
   },
   Person: <Person Schema Here>,
   BillingData: <BillingData Schema Here>
@@ -359,4 +355,4 @@ This example gets us a token. Great. But now we want to use that token to fetch 
 
 The key here comes in recognizing that each resolver function actually takes 2 arguments. The first is an object that contains any params and data, as you've already seen. The second is an object that contains any context data you want that stays localized to the request as a whole.
 
-In the `teamData` function, we add the authenticated user's record to the context and called it `viewer`. Then, in the `billingData` function, we were able to access the `viewer` context and return null if the viewer is not at admin.
+In the `teamData` function, we add the authenticated user's record to the context and called it `viewer`. Then, in the `billingData` function, we were able to access the `viewer` context and return null if the viewer is not an admin.
