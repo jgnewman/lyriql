@@ -1,0 +1,14 @@
+{
+  "name": "harkerql",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "mocha",
+    "gen-parser": "node bin/genparser"
+  },
+  "devDependencies": {
+    "jison": "^0.4.18",
+    "mocha": "^5.2.0"
+  }
+}
