@@ -238,6 +238,18 @@ When the `friends` resolver runs, it will fetch a list of user objects from the 
 
 ## Digging deeper
 
+### Testing your spec
+
+If you are using the Express middleware, you have the option of enabling a graphical interface that will allow you to interact with your spec. You can turn it on like so:
+
+```javascript
+app.use('/lyriql', expressLyriql(spec, { ui: true }))
+```
+
+Now if you visit `your-url.com/lyriql/ui`, you'll be given a simple, clean interface where you can type a query on the left, hit the "run" button, and see your result on the right.
+
+![Lyrical UI](https://raw.githubusercontent.com/jgnewman/lyriql/master/lyriql-ui.png)
+
 ### Modifying data
 
 So far we've only talked about querying, so it may not be immediately obvious how you would handle sending new updates to the server. Fortunately, there's nothing crazy here. Here's an example that updates user data:
