@@ -17,9 +17,9 @@
 
       header {
         background: #f1f1f1;
-        padding: .5rem 2rem;
+        padding: 1rem 2rem;
         box-sizing: border-box;
-        max-height: 45px;
+        max-height: 56px;
         overflow: hidden;
       }
 
@@ -27,6 +27,7 @@
         margin: 0;
         font-size: 1.5rem;
         display: inline-block;
+        line-height: 1;
       }
 
       .normal {
@@ -36,15 +37,22 @@
       .byline {
         font-size: .8rem;
         float: right;
-        padding-top: .5rem;
+        padding-top: .3rem;
+        line-height: 1;
+        color: #1D486F;
+        transition: all .3s ease;
+      }
+
+      .byline:hover {
+        color: purple;
       }
 
       .pane {
         margin: 0;
         position: absolute;
-        top: 45px;
+        top: 56px;
         width: 50%;
-        height: calc(100% - 45px);
+        height: calc(100% - 56px);
         box-sizing: border-box;
         padding: 2rem;
         font-family: 'fira code', 'monaco', 'consolas', monospace;
@@ -126,8 +134,14 @@
     <pre><code id="res" class="pane response"></code></pre>
     <pre><code id="req-mirror" class="pane request-mirror"></code></pre>
 
-<pre><code id="req" class="pane request" contenteditable="true">{
-  # write your query here
+<pre><code id="req" class="pane request" contenteditable="true">#
+# Type your query into this pane and click the
+# "Run Query" button to execute. The result will
+# show up in the pane on the right.
+#
+
+{
+  # Your query...
 }</code></pre>
 
     <button id="run" class="run-button">
@@ -183,14 +197,36 @@
         })
       }
 
+      function setText(pane, text) {
+        pane.innerText = text
+      }
+
+      function getText(pane) {
+        return pane.innerText
+      }
+
+      function setPersistedValue(value) {
+        localStorage.setItem('lyriqlRequestText', value)
+      }
+
+      function getPersistedValue() {
+        return localStorage.getItem('lyriqlRequestText')
+      }
+
       function mirrorRequest(persistedValue) {
+        const requestText = persistedValue || getText(requestPane)
+
         if (persistedValue) {
-          requestPane.innerText = persistedValue
+          setText(requestPane, persistedValue)
         }
-        const requestText = requestPane.innerText
-        requestPaneMirror.innerText = requestText
+
+        setText(requestPaneMirror, requestText)
         highlight('#req-mirror', window.queryPatterns)
-        localStorage.setItem('lyriqlRequestText', requestText)
+        setPersistedValue(requestText)
+      }
+
+      function formatResponseJSON(json) {
+        return JSON.stringify(json, null, 2).replace(/"([^\"]+)"(\:)/g, '$1$2')
       }
 
       requestPane.addEventListener('input', evt => {
@@ -200,12 +236,12 @@
       runButton.addEventListener('click', async () => {
         const requestText = requestPane.innerText
         const responseData = await fetch('/lyriql', { method: 'POST', body: requestText })
-        const formattedResponse = await responseData.json()
-        responsePane.innerText = JSON.stringify(formattedResponse, null, 2).replace(/"([^\"]+)"(\:)/g, '$1$2')
+        const jsonResponse = await responseData.json()
+        setText(responsePane, formatResponseJSON(jsonResponse))
         highlight('#res', window.jsonPatterns)
       })
 
-      mirrorRequest(localStorage.getItem('lyriqlRequestText'))
+      mirrorRequest(getPersistedValue())
       requestPane.focus()
     </script>
   </body>
