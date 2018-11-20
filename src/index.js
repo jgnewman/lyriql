@@ -10,22 +10,20 @@ function expect(type) {
 }
 
 // Raw query handler
-const handleQuery = async ({ query, schema, resolver }) => {
+const handleQuery = async (query, spec, req) => {
 
-  if (!query || !schema || !resolver) {
-    throw new Error('LyriQL requires query text, a schema, and a resolver')
+  if (!query || !spec) {
+    throw new Error('LyriQL requires query text and a spec object')
   }
 
-  const handler = new RequestHandler(query, schema, resolver)
+  const handler = new RequestHandler(query, spec, req)
   return handler.resolveRequest()
 }
 
-// is req.body formatted correctly?
-// can we send an object without JSONifying first?
-const expressLyriql = ({ schema, resolver }) => {
+const expressLyriql = (spec) => {
 
-  if (!schema || !resolver) {
-    throw new Error('LyriQL middleware requires a schema and a resolver')
+  if (!spec) {
+    throw new Error('LyriQL middleware requires a spec object')
   }
 
   return async (req, res, next) => {
@@ -50,11 +48,7 @@ const expressLyriql = ({ schema, resolver }) => {
     }
 
     try {
-      const result = await handleQuery({
-        query: query,
-        schema: schema,
-        resolver: resolver,
-      })
+      const result = await handleQuery(query, spec, req)
 
       if (result.data) {
         res.statusCode = 200

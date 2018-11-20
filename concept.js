@@ -1,7 +1,8 @@
-// LyriQL
+// LyriQL v2
+const { handleQuery, expect, demand } = require('./src/index')
 
 // frontend
-`{
+const query = `{
   viewer(token: "asdfasdfasdfadsf") {
     id
     name
@@ -13,56 +14,52 @@
 }`
 
 // backend
-const { expect, demand } = hql
-const schema = {
+const spec = {
+
   Root: {
     viewer: {
-      params: {
-        token: demand(String) // vs expect
-      },
-      data: demand('Person')
-    },
-  },
-  Person: {
-    id: demand(String),
-    name: demand(String),
-    friends: demand([ demand('Person') ])
-  }
-}
-const resolver = {
-  Root: {
-    // The first object passed to any function is
-    // a local context object containing any params for this
-    // particular data fetch, as well as any implicit data
-    // that should be available.
-    //
-    // The context object holds the http request and you can
-    // add more values to it as you go if you want
-    viewer: async ({ params }, context) => {
-      const personRef = _verifyToken(params.token)
-      const person = _db.get(personRef.id)
-      return person
-      // Because viewer data demands a Person type,
-      // the raw person record will automatically be
-      // run through resolver.Person and will be
-      // assigned as `data` in each call
+      type: demand('Person'),
+      params: { token: demand(String) },
+      resolve: async ({ params }, context) => {
+        return {
+          id: '1',
+          name: 'John',
+          friendIDs: ['2', '3']
+        }
+      }
     }
   },
+
   Person: {
-    id({ data }) {
-      return data.id
+    id: {
+      type: demand(String),
+      resolve: async ({ data }) => data.id
     },
-    name({ data }) {
-      return data.name
+    name: {
+      type: demand(String),
+      resolve: async ({ data }) => data.name
     },
-    friends: async ({ data }) => {
-      const friends = _db.getAll(data.friendIds)
-      return friends
-      // Because friends demands an array of Person types,
-      // each item we return here will automatically be run
-      // through the person resolver again and each item will
-      // be assigned to `data` for the resolver functions
+    friends: {
+      type: demand([ demand('Person') ]),
+      resolve: async ({ data }) => {
+        // Theoretically map data.friendIDs and pull person objects
+        return [
+          {
+            id: '2',
+            name: 'Bob'
+          },
+          {
+            id: '3',
+            name: 'Bill'
+          }
+        ]
+      }
     }
   }
 }
-app.use(lql({ schema, resolver }))
+
+const go = async () => {
+  const result = await handleQuery(query, spec)
+  console.log(result)
+}
+go()

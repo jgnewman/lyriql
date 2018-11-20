@@ -3,12 +3,10 @@ const { Demander, Validate, OK } = require('./validators')
 
 class RequestHandler {
 
-  constructor(requestText, schema, resolver, httpReq) {
+  constructor(requestText, spec, httpReq) {
     this.requestText = requestText
-    this.schema = schema
-    this.rootResolver = resolver
-    this.httpReq = httpReq
-    this.requestContext = { req: httpReq }
+    this.spec = spec
+    this.requestContext = { request: httpReq }
   }
 
   errorForProblem(validationResult) {
@@ -17,8 +15,8 @@ class RequestHandler {
     }
   }
 
-  buildLocalContext(node, schemaChunk, data) {
-    this.errorForProblem(Validate.validParams(node, schemaChunk[node.label]))
+  buildLocalContext(node, specChunk, data) {
+    this.errorForProblem(Validate.validParams(node, specChunk[node.label]))
 
     return {
       data: data,
@@ -39,25 +37,23 @@ class RequestHandler {
     return out
   }
 
-  async resolveNode(node, schemaType=new Demander('Root'), data=null) {
-    const expectsArray = Array.isArray(schemaType.type)
+  async resolveNode(node, specType=new Demander('Root'), data=null) {
+    const expectsArray = Array.isArray(specType.type)
 
     if (expectsArray) {
-      schemaType = schemaType.type[0]
+      specType = specType.type[0]
     }
 
-    this.errorForProblem(Validate.specInSchema(schemaType, this.schema))
-    this.errorForProblem(Validate.specInResolver(schemaType, this.rootResolver))
+    this.errorForProblem(Validate.specTypeExists(specType, this.spec))
 
-    const schema = this.schema[schemaType.type]
-    const resolver = this.rootResolver[schemaType.type]
+    const specChunk = this.spec[specType.type]
 
-    this.errorForProblem(Validate.fieldInSchema(node, schema))
-    this.errorForProblem(Validate.fieldInResolver(node, resolver))
+    this.errorForProblem(Validate.fieldInSpecChunk(node, specChunk))
 
-    const localContext = this.buildLocalContext(node, schema, data)
-    const typeChecker = this.resolveTypeChecker(schema[node.label])
-    const resolvedData = await resolver[node.label](localContext, this.requestContext)
+    const localContext = this.buildLocalContext(node, specChunk, data)
+    const typeChecker = this.resolveTypeChecker(specChunk[node.label].type)
+
+    const resolvedData = await specChunk[node.label].resolve(localContext, this.requestContext)
 
     this.errorForProblem(Validate.dataMatchesType(node, resolvedData, typeChecker))
 

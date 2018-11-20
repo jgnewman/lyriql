@@ -31,32 +31,28 @@ describe('api', function () {
           name
         }
       }`
-      this.schema = {
+      this.spec = {
         Root: {
           viewer: {
-            params: {
-              token: demand(String)
-            },
-            data: demand('Person')
+            type: demand('Person'),
+            params: { token: demand(String) },
+            resolve: async ({ params }, context) => {
+              return { id: '1', name: 'John' }
+            }
           },
         },
         Person: {
-          id: demand(String),
-          name: demand(String),
-        }
-      }
-      this.resolver = {
-        Root: {
-          viewer: async ({ params }, context) => {
-            return { id: '1', name: 'John' }
-          }
-        },
-        Person: {
-          id: async ({ data }) => {
-            return data.id
+          id: {
+            type: demand(String),
+            resolve: async ({ data }) => {
+              return data.id
+            }
           },
-          name: async ({ data }) => {
-            return data.name
+          name: {
+            type: demand(String),
+            resolve:async ({ data }) => {
+              return data.name
+            }
           }
         }
       }
@@ -66,48 +62,23 @@ describe('api', function () {
       it('throws an error', async function () {
         await assert.rejects(async () => {
           this.query = undefined
-          await handleQuery({
-            query: this.query,
-            schema: this.schema,
-            resolver: this.resolver,
-          })
+          await handleQuery(this.query, this.spec)
         })
       })
     })
 
-    context('when no schema is provided', function () {
+    context('when no spec is provided', function () {
       it('throws an error', async function () {
         await assert.rejects(async () => {
-          this.schema = undefined
-          await handleQuery({
-            query: this.query,
-            schema: this.schema,
-            resolver: this.resolver,
-          })
-        })
-      })
-    })
-
-    context('when no resolver is provided', function () {
-      it('throws an error', async function () {
-        await assert.rejects(async () => {
-          this.resolver = undefined
-          await handleQuery({
-            query: this.query,
-            schema: this.schema,
-            resolver: this.resolver,
-          })
+          this.spec = undefined
+          await handleQuery(this.query, this.spec)
         })
       })
     })
 
     context('when arguments are provided properly', function () {
       it('resolves a request', async function () {
-        const result = await handleQuery({
-          query: this.query,
-          schema: this.schema,
-          resolver: this.resolver,
-        })
+        const result = await handleQuery(this.query, this.spec)
         assert.deepEqual(result, { data: { id: '1', name: 'John' } })
       })
     })
@@ -140,32 +111,28 @@ describe('api', function () {
       this.expressApp.use(cors())
       this.expressApp.use(bodyParser.text())
       this.expressServer = this.expressApp.listen(3001)
-      this.schema = {
+      this.spec = {
         Root: {
           viewer: {
-            params: {
-              token: demand(String)
-            },
-            data: demand('Person')
+            type: demand('Person'),
+            params: { token: demand(String) },
+            resolve: async ({ params }, context) => {
+              return { id: '1', name: 'John' }
+            }
           },
         },
         Person: {
-          id: demand(String),
-          name: demand(String),
-        }
-      }
-      this.resolver = {
-        Root: {
-          viewer: async ({ params }, context) => {
-            return { id: '1', name: 'John' }
-          }
-        },
-        Person: {
-          id: async ({ data }) => {
-            return data.id
+          id: {
+            type: demand(String),
+            resolve: async ({ data }) => {
+              return data.id
+            }
           },
-          name: async ({ data }) => {
-            return data.name
+          name: {
+            type: demand(String),
+            resolve:async ({ data }) => {
+              return data.name
+            }
           }
         }
       }
@@ -175,29 +142,17 @@ describe('api', function () {
       this.expressServer.close()
     })
 
-    context('when no schema is provided', function () {
+    context('when no spec is provided', function () {
       it('throws an error', function () {
         assert.throws(function () {
-          expressLyriql({ resolver: this.resolver })
-        })
-      })
-    })
-
-    context('when no resolver is provided', function () {
-      it('throws an error', function () {
-        assert.throws(function () {
-          expressLyriql({ schema: this.resolver })
+          expressLyriql()
         })
       })
     })
 
     context('when the request method is not GET or POST', function () {
       it('returns a 405 with error json', async function () {
-
-        this.expressApp.use('/lyriql', expressLyriql({
-          schema: this.schema,
-          resolver: this.resolver
-        }))
+        this.expressApp.use('/lyriql', expressLyriql(this.spec))
 
         const result = await this.page.evaluate(async () => {
           try {
@@ -226,11 +181,7 @@ describe('api', function () {
 
     context('when an invalid query is made', function () {
       it('returns a 400 with error json', async function () {
-
-        this.expressApp.use('/lyriql', expressLyriql({
-          schema: this.schema,
-          resolver: this.resolver
-        }))
+        this.expressApp.use('/lyriql', expressLyriql(this.spec))
 
         const result = await this.page.evaluate(async () => {
           try {
@@ -254,11 +205,7 @@ describe('api', function () {
 
     context('when a valid POST query is made', function () {
       it('returns the expected result', async function () {
-
-        this.expressApp.use('/lyriql', expressLyriql({
-          schema: this.schema,
-          resolver: this.resolver
-        }))
+        this.expressApp.use('/lyriql', expressLyriql(this.spec))
 
         const result = await this.page.evaluate(async () => {
           try {
@@ -284,11 +231,7 @@ describe('api', function () {
 
     context('when a valid, nonencoded GET query is made', function () {
       it('returns the expected result', async function () {
-
-        this.expressApp.use('/lyriql', expressLyriql({
-          schema: this.schema,
-          resolver: this.resolver
-        }))
+        this.expressApp.use('/lyriql', expressLyriql(this.spec))
 
         const result = await this.page.evaluate(async () => {
           try {
@@ -318,11 +261,7 @@ describe('api', function () {
 
     context('when a valid, encoded GET query is made', function () {
       it('returns the expected result', async function () {
-
-        this.expressApp.use('/lyriql', expressLyriql({
-          schema: this.schema,
-          resolver: this.resolver
-        }))
+        this.expressApp.use('/lyriql', expressLyriql(this.spec))
 
         const result = await this.page.evaluate(async () => {
           try {

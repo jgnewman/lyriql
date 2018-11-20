@@ -8,14 +8,11 @@ describe('request-handler', function () {
       const handler = new RequestHandler(
         '{ foo }',
         { Root: {} },
-        { Root: {} },
         { bar: 'bar' }
       )
       assert.equal(handler.requestText, '{ foo }')
-      assert.deepEqual(handler.schema, { Root: {} })
-      assert.deepEqual(handler.rootResolver, { Root: {} })
-      assert.deepEqual(handler.httpReq, { bar: 'bar' })
-      assert.deepEqual(handler.requestContext, { req: { bar: 'bar' } })
+      assert.deepEqual(handler.spec, { Root: {} })
+      assert.deepEqual(handler.requestContext, { request: { bar: 'bar' } })
     })
   })
 
@@ -48,7 +45,7 @@ describe('request-handler', function () {
         label: 'foo',
         params: { a: 'a', b: 'b' }
       }
-      this.schemaChunk = {
+      this.specChunk = {
         'foo': { params: { a: new Expecter(String), b: new Expecter(String) } }
       }
       this.data = 'foo'
@@ -57,7 +54,7 @@ describe('request-handler', function () {
     context('when params are valid', function () {
       it('returns an object with data and params', function () {
         const handler = new RequestHandler()
-        const result = handler.buildLocalContext(this.node, this.schemaChunk, this.data)
+        const result = handler.buildLocalContext(this.node, this.specChunk, this.data)
         assert.deepEqual(result, {
           data: this.data,
           params: this.node.params
@@ -70,7 +67,7 @@ describe('request-handler', function () {
         const handler = new RequestHandler()
         this.node.params.a = 123
         assert.throws(function () {
-          handler.buildLocalContext(this.node, this.schemaChunk, this.data)
+          handler.buildLocalContext(this.node, this.specChunk, this.data)
         })
       })
     })
@@ -119,74 +116,57 @@ describe('request-handler', function () {
         params: {},
         body: []
       }
-      this.schema = {
+      this.spec = {
         Root: {
-          foo: new Expecter(String)
-        }
-      }
-      this.resolver = {
-        Root: {
-          foo: () => 'foo'
+          foo: {
+            type: new Expecter('Person'),
+            resolve: () => ({ name: 'foo' })
+          }
+        },
+        Person: {
+          name: {
+            type: new Expecter(String),
+            resolve: ({ data }) => data.name
+          }
         }
       }
     })
 
     context('when everything matches', function () {
       it('resolves the data', async function () {
-        const handler = new RequestHandler(this.query, this.schema, this.resolver)
+        const handler = new RequestHandler(this.query, this.spec)
         const result = await handler.resolveNode(this.node)
-        assert.equal(result, 'foo')
+        assert.deepEqual(result, { name: 'foo' })
       })
     })
 
-    context('when the proper spec is not found in the schema', function () {
+    context('when the required spec chunk is not found in the spec', function () {
       it('throws an error', async function () {
-        const handler = new RequestHandler(this.query, this.schema, this.resolver)
-        this.resolver = { Extra: { bar: new Expecter(String) } }
+        const handler = new RequestHandler(this.query, this.spec)
         await assert.rejects(async () => {
           return await handler.resolveNode(this.node, new Demander('Extra'))
         })
       })
     })
 
-    context('when the proper spec is not found in the resolver', function () {
+    context('when a requested field is not found in the spec chunk', function () {
       it('throws an error', async function () {
-        const handler = new RequestHandler(this.query, this.schema, this.resolver)
-        this.schema = { Extra: { bar: () => 'bar' } }
-        await assert.rejects(async () => {
-          return handler.resolveNode(this.node, new Demander('Extra'))
-        })
-      })
-    })
-
-    context('when a requested field is not found in the schema', function () {
-      it('throws an error', async function () {
+        this.query = 'bar'
         this.node.label = 'bar'
-        this.resolver.Root.bar = () => 'bar';
-        const handler = new RequestHandler('{ bar }', this.schema, this.resolver)
+        const handler = new RequestHandler(this.query, this.spec)
         await assert.rejects(async () => {
-          return handler.resolveNode(this.node, new Demander('Root'))
-        })
-      })
-    })
-
-    context('when a requested field is not found in the resolver', function () {
-      it('throws an error', async function () {
-        this.node.label = 'bar'
-        this.schema.Root.bar = new Expecter(String);
-        const handler = new RequestHandler('{ bar }', this.schema, this.resolver)
-        await assert.rejects(async () => {
-          return handler.resolveNode(this.node, new Demander('Root'))
+          return handler.resolveNode(this.node)
         })
       })
     })
 
     context('when a resolved piece of data does not match the expected type', function () {
       it('throws an error', async function () {
-        const handler = new RequestHandler(this.query, this.schema, this.resolver)
-        this.resolver.Root.foo = () => 123;
+        const handler = new RequestHandler(this.query, this.spec)
+        this.spec.Root.foo.resolve = () => 123;
         await assert.rejects(async () => {
-          return handler.resolveNode(this.node, new Demander('Root'))
+          const out = await handler.resolveNode(this.node)
+          console.log('hello', out)
         })
       })
     })
@@ -200,21 +180,19 @@ describe('request-handler', function () {
         params: {},
         body: []
       }
-      this.schema = {
+      this.spec = {
         Root: {
-          foo: new Expecter(String)
-        }
-      }
-      this.resolver = {
-        Root: {
-          foo: () => 'foo'
+          foo: {
+            type: new Expecter(String),
+            resolve: () => 'foo'
+          }
         }
       }
     })
 
     context('when there are no errors', function () {
       it('returns an object with a data property', async function () {
-        const handler = new RequestHandler(this.query, this.schema, this.resolver)
+        const handler = new RequestHandler(this.query, this.spec)
         handler.resolveNode = async () => Promise.resolve('foo');
         const result = await handler.resolveRequest()
         assert.deepEqual(result, { data: 'foo' })
@@ -223,7 +201,7 @@ describe('request-handler', function () {
 
     context('when there are errors', function () {
       it('returns an object with an error property', async function () {
-        const handler = new RequestHandler(this.query, this.schema, this.resolver)
+        const handler = new RequestHandler(this.query, this.spec)
         handler.resolveNode = async () => Promise.reject('foo');
         const result = await handler.resolveRequest()
         assert.deepEqual(result, { error: 'foo' })

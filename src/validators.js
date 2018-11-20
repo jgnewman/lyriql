@@ -1,4 +1,4 @@
-const OK = Symbol.for('HARKERQL_OK_SYMBOL')
+const OK = Symbol.for('LYRIQL_OK_SYMBOL')
 
 function checkNativeType(value, typename) {
   switch (typename) {
@@ -38,11 +38,13 @@ class Expecter {
       const typename = this.type.name.toLowerCase()
       const matches = checkNativeType(val, typename)
       return matches ? OK : this.typeMismatch(node, this.type.name)
-    }
 
-    if (this.isArray) {
+    } else if (this.isArray) {
       const valIsArray = Array.isArray(val)
       return valIsArray ? OK : this.typeMismatch(node, 'Array')
+
+    } else {
+      if (typeof val !== 'object') return this.typeMismatch(node, this.type.name)
     }
 
     return OK
@@ -59,22 +61,22 @@ class Demander extends Expecter {
 class Validate {
 
   // request contains correct params (amount, names, types)
-  static validParams(node, schemaChunk) {
+  static validParams(node, specChunk) {
     const paramKeys = Object.keys(node.params)
+    const specParamKeys = specChunk.params ? Object.keys(specChunk.params) : null
 
-    if (!schemaChunk.params) {
+    if (!specChunk.params || !specParamKeys.length) {
       return !paramKeys.length ? OK : `Unexpected parameters provided for field "${node.label}"`
     }
 
-    const schemaParamKeys = Object.keys(schemaChunk.params)
-    if (schemaParamKeys.length !== paramKeys.length) {
+    if (specParamKeys.length !== paramKeys.length) {
       return `Wrong number of parameters provided for field "${node.label}"`
     }
 
     let foundProblem = null
     paramKeys.some(key => {
       const val = node.params[key]
-      const typeChecker = schemaChunk.params[key]
+      const typeChecker = specChunk.params[key]
 
       if (!typeChecker) {
         return foundProblem = `Unexpected parameter "${key}" for field "${node.label}"`
@@ -89,28 +91,16 @@ class Validate {
     return OK
   }
 
-  // requested object spec exists in schema
-  static specInSchema(typeChecker, schema) {
-    if (typeChecker.isNative || schema[typeChecker.type]) return OK
-    return `Schema does not contain a specification for "${typeChecker.type}"`
+  // requested piece of spec exists in overall spec
+  static specTypeExists(typeChecker, spec) {
+    if (typeChecker.isNative || spec[typeChecker.type]) return OK
+    return `Spec does not contain a description of "${typeChecker.type}"`
   }
 
-  // requested object spec exists in resolver
-  static specInResolver(typeChecker, resolver) {
-    if (typeChecker.isNative || resolver[typeChecker.type]) return OK
-    return `Resolver does not contain a specification for "${typeChecker.type}"`
-  }
-
-  // requested field exists in schema type
-  static fieldInSchema(node, schemaChunk) {
-    if (schemaChunk.hasOwnProperty(node.label)) return OK
-    return `Field "${node.label}" does not exist in schema`
-  }
-
-  // requested field exists in resolver type
-  static fieldInResolver(node, resolverChunk) {
-    if (resolverChunk.hasOwnProperty(node.label)) return OK
-    return `Field "${node.label}" does not exist in resolver`
+  // requested field exists in a piece of the spec
+  static fieldInSpecChunk(node, specChunk) {
+    if (specChunk.hasOwnProperty(node.label)) return OK
+    return `Field "${node.label}" does not exist in spec`
   }
 
   // returned data for field is of correct type

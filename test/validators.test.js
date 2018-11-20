@@ -9,7 +9,7 @@ describe('validators', function () {
     })
 
     it('is a predictable symbol', function () {
-      assert.equal(OK, Symbol.for('HARKERQL_OK_SYMBOL'))
+      assert.equal(OK, Symbol.for('LYRIQL_OK_SYMBOL'))
     })
   })
 
@@ -72,6 +72,13 @@ describe('validators', function () {
           assert.ok(/does not match type/.test(validator.validate(this.node, 123)))
         })
       })
+
+      context('when validating with a non-native constructor', function () {
+        it('returns an error string if the value has a type other than object', function () {
+          const validator = new Expecter('Foo')
+          assert.ok(/does not match type/.test(validator.validate(this.node, 123)))
+        })
+      })
     })
   })
 
@@ -95,128 +102,98 @@ describe('validators', function () {
       })
 
       context('valid conditions', function () {
-        it('no params in schema and no params provided', function () {
+        it('no params in spec chunk and no params provided', function () {
           this.node.params = {}
-          const schema = {}
-          const result = Validate.validParams(this.node, schema)
+          const specChunk = {}
+          const result = Validate.validParams(this.node, specChunk)
           assert.equal(result, OK)
         })
 
-        it('params provided match params in schema', function () {
+        it('params provided match params in spec chunk', function () {
           this.node.params = {a: 'a', b: 123}
-          const schema = { params: { a: new Expecter(String), b: new Expecter(Number) } }
-          const result = Validate.validParams(this.node, schema)
+          const specChunk = { params: { a: new Expecter(String), b: new Expecter(Number) } }
+          const result = Validate.validParams(this.node, specChunk)
           assert.equal(result, OK)
         })
       })
 
       context('invalid conditions', function () {
-        it('no params in schema but params provided', function () {
+        it('no params in spec chunk but params provided', function () {
           this.node.params = {a: 'a', b: 123}
-          const schema = {}
-          const result = Validate.validParams(this.node, schema)
+          const specChunk = {}
+          const result = Validate.validParams(this.node, specChunk)
           assert.ok(/unexpected parameters provided/i.test(result))
         })
 
-        it('params exist in schema but no params provided', function () {
+        it('params exist in spec chunk but no params provided', function () {
           this.node.params = {}
-          const schema = { params: { a: new Expecter(String), b: new Expecter(Number) } }
-          const result = Validate.validParams(this.node, schema)
+          const specChunk = { params: { a: new Expecter(String), b: new Expecter(Number) } }
+          const result = Validate.validParams(this.node, specChunk)
           assert.ok(/wrong number of parameters provided/i.test(result))
         })
 
-        it('number of params provided does not match schema', function () {
+        it('number of params provided does not match spec chunk', function () {
           this.node.params = {a: 'a', b: 123, c: null}
-          const schema = { params: { a: new Expecter(String), b: new Expecter(Number) } }
-          const result = Validate.validParams(this.node, schema)
+          const specChunk = { params: { a: new Expecter(String), b: new Expecter(Number) } }
+          const result = Validate.validParams(this.node, specChunk)
           assert.ok(/wrong number of parameters provided/i.test(result))
         })
 
         it('an unexpected parameter is provided', function () {
           this.node.params = {a: 'a', c: 123}
-          const schema = { params: { a: new Expecter(String), b: new Expecter(Number) } }
-          const result = Validate.validParams(this.node, schema)
+          const specChunk = { params: { a: new Expecter(String), b: new Expecter(Number) } }
+          const result = Validate.validParams(this.node, specChunk)
           assert.ok(/unexpected parameter/i.test(result))
         })
 
         it('an provided parameter is of the wrong type', function () {
           this.node.params = {a: 'a', b: 'b'}
-          const schema = { params: { a: new Expecter(String), b: new Expecter(Number) } }
-          const result = Validate.validParams(this.node, schema)
+          const specChunk = { params: { a: new Expecter(String), b: new Expecter(Number) } }
+          const result = Validate.validParams(this.node, specChunk)
           assert.ok(/value for parameter/i.test(result))
         })
       })
     })
 
-    describe('#specInSchema', function () {
+    describe('#specTypeExists', function () {
       beforeEach(function () {
-        this.schema = { Foo: {} }
+        this.spec = { Foo: {} }
       })
 
       context('when an expecter wants a native value', function () {
         it('returns OK', function () {
           const expecter = new Expecter(String)
-          const result = Validate.specInSchema(expecter, this.schema)
+          const result = Validate.specTypeExists(expecter, this.spec)
           assert.equal(result, OK)
         })
       })
 
-      context('when the expected value exists in the schema', function () {
+      context('when the expected value exists in the spec', function () {
         it('returns OK', function () {
           const expecter = new Expecter('Foo')
-          const result = Validate.specInSchema(expecter, this.schema)
+          const result = Validate.specTypeExists(expecter, this.spec)
           assert.equal(result, OK)
         })
       })
 
-      context('when the expected value does not exist in the schema', function () {
+      context('when the expected value does not exist in the spec', function () {
         it('returns an error string', function () {
           const expecter = new Expecter('Bar')
-          const result = Validate.specInSchema(expecter, this.schema)
+          const result = Validate.specTypeExists(expecter, this.spec)
           assert.ok(/does not contain/.test(result))
         })
       })
     })
 
-    describe('#specInResolver', function () {
-      beforeEach(function () {
-        this.resolver = { Foo: {} }
-      })
-
-      context('when an expecter wants a native value', function () {
-        it('returns OK', function () {
-          const expecter = new Expecter(String)
-          const result = Validate.specInResolver(expecter, this.resolver)
-          assert.equal(result, OK)
-        })
-      })
-
-      context('when the expected value exists in the resolver', function () {
-        it('returns OK', function () {
-          const expecter = new Expecter('Foo')
-          const result = Validate.specInResolver(expecter, this.resolver)
-          assert.equal(result, OK)
-        })
-      })
-
-      context('when the expected value does not exist in the resolver', function () {
-        it('returns an error string', function () {
-          const expecter = new Expecter('Bar')
-          const result = Validate.specInResolver(expecter, this.resolver)
-          assert.ok(/does not contain/.test(result))
-        })
-      })
-    })
-
-    describe('#fieldInSchema', function () {
+    describe('#fieldInSpecChunk', function () {
       beforeEach(function () {
         this.node = { label: 'foo' }
-        this.schema = { foo: new Demander(String) }
+        this.specChunk = { foo: new Demander(String) }
       })
 
       context('when a query field exists in a resolver', function () {
         it('returns ok', function () {
-          const result = Validate.fieldInSchema(this.node, this.schema)
+          const result = Validate.fieldInSpecChunk(this.node, this.specChunk)
           assert.equal(result, OK)
         })
       })
@@ -224,29 +201,7 @@ describe('validators', function () {
       context('when a query field does not exist in a resolver', function () {
         it('returns an error string', function () {
           this.node.label = 'bar'
-          const result = Validate.fieldInSchema(this.node, this.schema)
-          assert.ok(/does not exist/.test(result))
-        })
-      })
-    })
-
-    describe('#fieldInResolver', function () {
-      beforeEach(function () {
-        this.node = { label: 'foo' }
-        this.resolver = { foo: () => {} }
-      })
-
-      context('when a query field exists in a resolver', function () {
-        it('returns ok', function () {
-          const result = Validate.fieldInResolver(this.node, this.resolver)
-          assert.equal(result, OK)
-        })
-      })
-
-      context('when a query field does not exist in a resolver', function () {
-        it('returns an error string', function () {
-          this.node.label = 'bar'
-          const result = Validate.fieldInResolver(this.node, this.resolver)
+          const result = Validate.fieldInSpecChunk(this.node, this.specChunk)
           assert.ok(/does not exist/.test(result))
         })
       })

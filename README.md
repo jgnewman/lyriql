@@ -38,13 +38,10 @@ In this case, the data returned will contain _only_ the name and email fields, r
 Now let's say you want 2 users. No problem! Just spell it out:
 
 ```javascript
-const userFragment = `
-  {
-    name
-    email
-  }
-`;
-
+const userFragment = `{
+  name
+  email
+}`;
 
 `
 {
@@ -54,7 +51,7 @@ const userFragment = `
 `
 ```
 
-Doing this will cause the server to return an array containing both users. Speaking of arrays, you'll notice that we don't need any kind of `[ square bracket ]` syntax to specify arrays. The server is smart enough to figure it out. For example, let's say you wanted to get a list of friends along with your basic user data. There could be many!
+Doing this will cause the server to return an array containing both users. Speaking of arrays, you'll notice that we don't need any kind of `[ square bracket ]` syntax to specify arrays. The server is smart enough to figure it out. For example, let's say you wanted to get a list of friends along with your basic user data.
 
 ```javascript
 `
@@ -107,12 +104,12 @@ So go ahead and fire off your query to the server using whatever tool you want:
 
 ```javascript
 const query = `
-{
-  user(id: 123) {
-    name
-    email
+  {
+    user(id: 123) {
+      name
+      email
+    }
   }
-}
 `
 
 const response = await fetch('/lyriql', {
@@ -128,17 +125,18 @@ On the server side, import LyriQL and funnel post requests on this route to it:
 ```javascript
 import { handleQuery } from 'lyriql'
 
-YOUR_ROUTER.post('/lyriql', async (req, res) => {
-  const data = await handleQuery({
-    query: req.body,    // <- This is the query text from the front-end
-    schema: schema,     // <- We'll talk about this in a second
-    resolver: resolverv // <- This too
-  })
+YOUR_ROUTER.on('POST', '/lyriql', async (req, res) => {
+
+  const query = req.body  // <- Grab the query text coming in from the front-end
+  const spec = spec       // <- We'll talk about what spec is in a second
+
+  const data = await handleQuery(query, spec, req)
   res.send(data)
+
 })
 ```
 
-...or, if you're using the **Express middleware**...
+Or, if you're using the **Express middleware**, there's less to think about:
 
 ```javascript
 import express from 'express'
@@ -148,90 +146,95 @@ import { expressLyriql } from 'lyriql'
 const app = express()
 app.use(bodyParser.text())
 
-app.use('/lyriql', expressLyriql({
-  schema: schema,
-  resolver, resolver
-}))
+app.use('/lyriql', expressLyriql(spec))
 ```
 
-LyriQL will process the request, run it through your schema and resolver (which we'll discuss momentarily), and hand you back a Promise that resolves with the requested data. When everything goes well, the result has a `data` property (for example, `{ data: <RESPONSE_DATA> }`). If something goes wrong, it will instead have an `error` property (for example, `{ error: <ERROR_TEXT> }`).
+LyriQL will process the request, run it through your spec (which we'll discuss momentarily), and hand you back a Promise that resolves with the requested data. When everything goes well, the result has a `data` property (for example, `{ data: <RESPONSE_DATA> }`). If something goes wrong, it will instead have an `error` property (for example, `{ error: <ERROR_TEXT> }`).
 
 ### Processing queries
 
-Of course, LyriQL isn't magic. In order for your queries to work, you have to define what the front-end is allowed to ask for. This is done via 2 objects, namely a **schema** and a **resolver**.
+Of course, LyriQL isn't magic. In order for your queries to work, you have to define what the front-end is allowed to ask for. This is done via a `spec` object.
 
-A **schema** object defines the allowed structure for your queries and enforces data types.
+A **spec** object defines the allowed structure for your queries, enforces data types, and contains functions that actually fetch and process the requested data.
 
-A **resolver** contains functions corresponding to the schema that serve to actually fetch and process the requested data.
-
-Both your schema and resolver objects must include a `Root` property at the top level that serves an an entry point. Here's an example schema:
+Your spec object must include a `Root` property at the top level that serves an an entry point. Here's an example spec:
 
 ```javascript
-import lyri from 'lyriql'
-const { expect, demand } = lyri
+import { expect, demand } from 'lyriql'
+import db from 'whatever-database-tool-you-use'
 
-const schema = {
+const spec = {
 
   Root: {
     user: {
+      type: expect('Person'),
       params: { id: demand(Number) },
-      data: expect('Person'),
+      resolve: async ({ params }) => db.getUserById(params.id)
     }
   },
 
   Person: {
-    id: demand(Number),
-    name: demand(String),
-    email: demand(String),
-    friends: demand([ demand('Person') ]),
+    id: {
+      type: demand(Number),
+      resolve: ({ data }) => data.id
+    },
+
+    name: {
+      type: demand(String),
+      resolve: ({ data }) => data.name
+    },
+
+    email: {
+      type: demand(String),
+      resolve: ({ data }) => data.email
+    },
+
+    friends: {
+      type: demand([ demand('Person') ]),
+      resolve: async ({ data }) => {
+        const friends = []
+        await Promise.all(data.friendIDs.map(async (friendID) => {
+          const friend = await db.getUserById(friendID)
+          friends.push(friend)
+        }))
+        return friends
+      }
+    }
   }
 
 }
 ```
 
-In the schema, the fields in the `Root` object define the top level queries the front-end can make. In this case, we've only allowed the front-end to query for a user. Any field that requires parameters is written as an object with a `params` key and a `data` key. We then use the `demand` and `expect` functions to lock down what type of data can be sent through as a parameter and what type of data we expect to be returned. The difference between these two functions is that `expect` will allow the value `null`, but `demand` will not.
-
-In any case where we pass a custom type name (such as "Person") to `expect/demand`, we need to make sure our schema defines what this custom type looks like. Since none of the fields on a Person need to take parameters of their own, we can write each one as an instance of `expect/demand`, denoting what type of data must be returned for that field. Notice that `friends` demands an array of Person objects.
-
-#### Now it's time to actually fetch the data!
-
-Here is an example of a corresponding resolver:
+We could use the following query with this spec:
 
 ```javascript
-import db from 'whatever-database-tool-you-use'
-
-const resolver = {
-
-  Root: {
-    user: async ({ params }) => db.getUserById(params.id)
-  },
-
-  Person: {
-
-    id: ({ data }) => data.id,
-
-    name: ({ data }) => data.name,
-
-    email: ({ data }) => data.email,
-
-    friends: async ({ data }) => {
-      const friends = []
-      await Promise.all(data.friendIDs.map(async (friendID) => {
-        const friend = await db.getUserById(friendID)
-        friends.push(friend)
-      }))
-      return friends
+`
+{
+  user(id: 123) {
+    name
+    email
+    friends {
+      name
+      email
     }
   }
-
 }
+`
 ```
 
-Our resolver will need to have keys corresponding to each key in our schema. Each one is a function that explains how to resolve that particular piece of data. The `user` function, for example, is handed an object with the given parameters and fetches user data from the database.
+The query is looking for a `user` so LyriQL will try to find a `user` description in the `Root` of your spec, since that's the entry point. If it doesn't find one, it'll send you back a useful error.
 
-Because our schema has demanded that the result of calling `user` should match the Person spec, that raw user object will then be processed by the Person resolver automatically. Every field the front-end requested will be generated by calling the corresponding function in the Person resolver, and passing the raw user object in as the `data` argument you can see in the example.
+Upon finding the user description, LyriQL starts checking types. The query contains an `id` param so the spec will need to describe what type of data that param is allowed to take. In this example, we've said that we `demand` a `Number` for the `id` param. This way, if any other kind of data gets sent in for this parameter, we'll get another useful error.
 
-Notice that you can make any of these functions asynchronous using Promises. Also, because the schema demands that `friends` should be an array of `Person` objects, each raw user object in the array returned by the `friends` function will also be processed by the Person resolver automatically.
+> Note: rather than using `demand`, we could have used `expect`. The only difference between the two is that `expect` doesn't throw an error on a `null` result. So if there's a chance your data might not exist, make sure to use `expect` and return `null`.
+
+We've specified in the `user` description that the data returned from the call should take the form of a `Person`. Because `'Person'` is a custom string and not a native type constructor, LyriQL will take the data returned by the call and make sure it matches another object in the spec called `Person`. However, before it does, it will use the `resolve` function to actually fetch the user data. Notice that this function is called with an object containing the params that were sent in the query.
+
+When the `resolve` function spits out a user object, LyriQL will automatically take that object and pass it as the `data` argument to every function in the `Person` spec that corresponds to a field we requested in the query to determine how to populate that field in the end result.
+
+Notice that each of these fields makes use of a type checker to ensure that they always return the correct type of data. In particular, the `friends` field will only be happy if it returns an array of `Person` objects.
+
+When the `friends` resolver runs, it will fetch a list of user objects from the database and return the raw list. Because the `friends` type checker demands a list of `Person`s, each object in the list will be recursively passed through the `Person` spec in order to properly resolve their respective fields. The recursion doesn't go on forever because our query doesn't request every friend's friends' friends, etc – just one users list of friends.
 
 ## Digging deeper
 
@@ -247,25 +250,23 @@ So far we've only talked about querying, so it may not be immediately obvious ho
 }
 `
 
-// Schema
+// Spec
 {
   Root: {
     updateUser: {
+
+      type: demand(String),
+
       params: {
         id: demand(Number),
         changes: demand(Object)
-      }
-      data: demand(String)
-    }
-  }
-}
+      },
 
-// Resolver
-{
-  Root: {
-    async updateUser({ params }) {
-      await db.updateUserById(params.id, params.changes)
-      return 'Success!'
+      resolve: async ({ params }) => {
+        await db.updateUserById(params.id, params.changes)
+        return 'Success!'
+      }
+
     }
   }
 }
@@ -293,19 +294,21 @@ Here's an example of an authentication workflow that should get you everything y
 }
 `
 
-// Schema Field
+// Spec Field
 authenticate: {
+
+  type: expect(String),
+
   params: {
     email: demand(String),
     password: demand(String),
   },
-  data: expect(String)
-}
 
-// Resolver Field
-authenticate: async ({ params }) => {
-  const user = await db.getUser(params.email, params.password)
-  return user ? getTokenForUser(user) : null
+  resolve: async ({ params }) => {
+    const user = await db.getUser(params.email, params.password)
+    return user ? getTokenForUser(user) : null
+  }
+
 }
 ```
 
@@ -324,57 +327,50 @@ This example gets us a token. Great. But now we want to use that token to fetch 
 }
 `
 
-// Schema
+// Spec
 {
   Root: {
-    authenticate: <Authenticate Schema Here>,
+    authenticate: <Authenticate Spec Here>,
+
     teamData: {
+      type: expect('Team')
       params: {
         token: demand(String)
       },
-      data: expect('Team')
-    }
-  },
-  Team: {
-    members: demand([ demand('Person') ]),
-    billingData: expect('BillingData')
-  },
-  Person: <Person Schema Here>,
-  BillingData: <BillingData Schema Here>
-}
-
-// Resolver
-{
-  Root: {
-    authenticate: <Authenticate Resolver Here>,
-
-    teamData: async ({ params }, context) => {
-      const user = await getUserFromToken(params.token)
-      const team = await getTeamByUserId(user.id)
-
-      context.viewer = user
-
-      return team
-    }
-  },
-
-  Team: {
-    members: async ({ data }) => {
-      const members = await getTeamMembers(data.memberIDs)
-      return members
-    },
-
-    billingData: async ({ data }, { viewer }) => {
-      if (!viewer.isAdmin) {
-        return null
-      } else {
-        return data.billingData
+      resolve: async ({ params }, context) => {
+        const user = await getUserFromToken(params.token)
+        const team = await getTeamByUserId(user.id)
+        context.viewer = user
+        return team
       }
     }
   },
 
-  Person: <Person Resolver Here>,
-  BillingData: <BillingData Resolver Here>,
+  Team: {
+
+    members: {
+      type: demand([ demand('Person') ]),
+      resolve: async ({ data }) => {
+        const members = await getTeamMembers(data.memberIDs)
+        return members
+      }
+    }
+
+    billingData: {
+      type: expect('BillingData'),
+      resolve: async ({ data }, { viewer }) => {
+        if (!viewer.isAdmin) {
+          return null
+        } else {
+          return data.billingData
+        }
+      }
+    }
+
+  },
+
+  Person: <Person Spec Here>,
+  BillingData: <BillingData Spec Here>
 }
 ```
 
