@@ -101,7 +101,7 @@ And just like that, it becomes easier than ever to query data!
 
 You'll need to make sure there is a single route on the server allocated to HarkerQL queries. By convention, we normally use `//your-url.com/harkerql`.
 
-You _don't_ need special handlers for all the possible REST request types since everything you want to happen is specified in your query text. Instead, we normally just default to intercepting the POST method.
+You _don't_ need special handlers for all the possible REST request types since everything you want to happen is specified in your query text. Instead, we normally just default to intercepting the GET or POST method. In fact, if you use the Express middleware, it only allows GET and POST.
 
 So go ahead and fire off your query to the server using whatever tool you want:
 
@@ -114,26 +114,47 @@ const query = `
   }
 }
 `
-const response = await YOUR_AJAX_TOOL.post('/harkerql', query)
-console.log(response) // { data: { ... } }
+
+const response = await fetch('/harkerql', {
+  method: 'POST',
+  body: query
+})
+
+await response.json() // { data: { ... } }
 ```
 
 On the server side, import HarkerQL and funnel post requests on this route to it:
 
 ```javascript
-import harker from 'harkerql'
+import { handleQuery } from 'harkerql'
 
 YOUR_ROUTER.post('/harkerql', async (req, res) => {
-  const data = await harker({
+  const data = await handleQuery({
     query: req.body,    // <- This is the query text from the front-end
     schema: schema,     // <- We'll talk about this in a second
-    resolver: resolver, // <- This too
+    resolver: resolverv // <- This too
   })
   res.send(data)
 })
 ```
 
-HarkerQL will process the request, run it through your schema and resolver (which we'll discuss momentarily), and hand you back a Promise that resolves with the requested data. When everything goes well, the result has a `data` property (for example, `{ data: { ... } }`). If something goes wrong, it will instead have an `error` property (for example, `{ error: <ERROR_TEXT> }`).
+...or, if you're using the **Express middleware**...
+
+```javascript
+import express from 'express'
+import bodyParser from 'body-parser' // <- Because, you know, express
+import { harkerExpress } from 'harkerql'
+
+const app = express()
+app.use(bodyParser.text())
+
+app.use('/harkerql', harkerExpress({
+  schema: schema,
+  resolver, resolver
+}))
+```
+
+HarkerQL will process the request, run it through your schema and resolver (which we'll discuss momentarily), and hand you back a Promise that resolves with the requested data. When everything goes well, the result has a `data` property (for example, `{ data: <RESPONSE_DATA> }`). If something goes wrong, it will instead have an `error` property (for example, `{ error: <ERROR_TEXT> }`).
 
 ### Processing queries
 
@@ -186,9 +207,13 @@ const resolver = {
   },
 
   Person: {
+
     id: ({ data }) => data.id,
+
     name: ({ data }) => data.name,
+
     email: ({ data }) => data.email,
+
     friends: async ({ data }) => {
       const friends = []
       await Promise.all(data.friendIDs.map(async (friendID) => {

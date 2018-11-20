@@ -33,12 +33,25 @@ const harkerExpress = ({ schema, resolver }) => {
     if (req.method !== 'GET' && req.method !== 'POST') {
       res.setHeader('Allow', 'GET, POST');
       res.statusCode = 405
-      res.send({ error: 'HarkerQL middleware only supports GET and POST requests' })
+      return res.send({ error: 'HarkerQL middleware only supports GET and POST requests' })
+    }
+
+    let query = null
+
+    if (req.method === 'GET') {
+      query = req.query.query
+      if (query[0] === '%') {
+        query = decodeURIComponent(query)
+      }
+    }
+
+    else if (req.method === 'POST') {
+      query = req.body
     }
 
     try {
       const result = await handleQuery({
-        query: req.body,
+        query: query,
         schema: schema,
         resolver: resolver,
       })
@@ -67,58 +80,3 @@ module.exports = {
   demand,
   expect,
 }
-
-// const handler = new RequestHandler(
-//   `{
-//     viewer(token: "asdfasdfasdf", json: [{"foo": "bar"}]) {
-//       id
-//       name
-//       friends {
-//         id
-//         name
-//       }
-//     }
-//   }`,
-//   { // schema
-//     Root: {
-//       viewer: {
-//         params: {
-//           token: demand(String), // vs expect
-//           json: demand(Array)
-//         },
-//         data: demand('Person')
-//       },
-//     },
-//     Person: {
-//       id: demand(String),
-//       name: demand(String),
-//       friends: demand([ demand('Person') ])
-//     }
-//   },
-//   { // resolver
-//     Root: {
-//       viewer: async ({ params }, context) => {
-//         return { id: '1', name: 'John' }
-//       }
-//     },
-//     Person: {
-//       id: async ({ data }) => {
-//         return data.id
-//       },
-//       name: async ({ data }) => {
-//         return data.name
-//       },
-//       friends: async ({ data }) => {
-//         return [{id: '2', name: 'Patrick'}, {id: '3', name: 'Mary'}]
-//       }
-//     }
-//   }
-// )
-//
-// const go = async () => {
-//   const begin = +new Date
-//   const resolved = await handler.resolveRequest()
-//   const end = +new Date
-//   console.log(end - begin, JSON.stringify(resolved))
-// }
-// go()
