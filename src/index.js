@@ -13,7 +13,7 @@ function expect(type) {
 const handleQuery = async ({ query, schema, resolver }) => {
 
   if (!query || !schema || !resolver) {
-    throw new Error('HarkerQL requires query text, a schema, and a resolver')
+    throw new Error('LyriQL requires query text, a schema, and a resolver')
   }
 
   const handler = new RequestHandler(query, schema, resolver)
@@ -22,10 +22,10 @@ const handleQuery = async ({ query, schema, resolver }) => {
 
 // is req.body formatted correctly?
 // can we send an object without JSONifying first?
-const harkerExpress = ({ schema, resolver }) => {
+const expressLyriql = ({ schema, resolver }) => {
 
   if (!schema || !resolver) {
-    throw new Error('HarkerQL middleware requires a schema and a resolver')
+    throw new Error('LyriQL middleware requires a schema and a resolver')
   }
 
   return async (req, res, next) => {
@@ -33,7 +33,7 @@ const harkerExpress = ({ schema, resolver }) => {
     if (req.method !== 'GET' && req.method !== 'POST') {
       res.setHeader('Allow', 'GET, POST');
       res.statusCode = 405
-      return res.send({ error: 'HarkerQL middleware only supports GET and POST requests' })
+      return res.send({ error: 'LyriQL middleware only supports GET and POST requests' })
     }
 
     let query = null
@@ -76,7 +76,7 @@ const harkerExpress = ({ schema, resolver }) => {
 
 module.exports = {
   handleQuery,
-  harkerExpress,
+  expressLyriql,
   demand,
   expect,
 }

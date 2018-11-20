@@ -4,7 +4,7 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const cors = require('cors')
 
-const { handleQuery, harkerExpress, demand, expect } = require('../src/index')
+const { handleQuery, expressLyriql, demand, expect } = require('../src/index')
 const { Expecter, Demander } = require('../src/validators')
 
 
@@ -113,7 +113,7 @@ describe('api', function () {
     })
   })
 
-  describe('harkerExpress', function () {
+  describe('expressLyriql', function () {
     before(async function () {
       const port = 3000
       const routes = [{
@@ -178,7 +178,7 @@ describe('api', function () {
     context('when no schema is provided', function () {
       it('throws an error', function () {
         assert.throws(function () {
-          harkerExpress({ resolver: this.resolver })
+          expressLyriql({ resolver: this.resolver })
         })
       })
     })
@@ -186,7 +186,7 @@ describe('api', function () {
     context('when no resolver is provided', function () {
       it('throws an error', function () {
         assert.throws(function () {
-          harkerExpress({ schema: this.resolver })
+          expressLyriql({ schema: this.resolver })
         })
       })
     })
@@ -194,14 +194,14 @@ describe('api', function () {
     context('when the request method is not GET or POST', function () {
       it('returns a 405 with error json', async function () {
 
-        this.expressApp.use('/harkerql', harkerExpress({
+        this.expressApp.use('/lyriql', expressLyriql({
           schema: this.schema,
           resolver: this.resolver
         }))
 
         const result = await this.page.evaluate(async () => {
           try {
-            const response = await fetch('http://localhost:3001/harkerql', {
+            const response = await fetch('http://localhost:3001/lyriql', {
               method: 'PUT',
               body: `{
                 viewer(token: "asdfasdfasdf") {
@@ -227,14 +227,14 @@ describe('api', function () {
     context('when an invalid query is made', function () {
       it('returns a 400 with error json', async function () {
 
-        this.expressApp.use('/harkerql', harkerExpress({
+        this.expressApp.use('/lyriql', expressLyriql({
           schema: this.schema,
           resolver: this.resolver
         }))
 
         const result = await this.page.evaluate(async () => {
           try {
-            const response = await fetch('http://localhost:3001/harkerql', {
+            const response = await fetch('http://localhost:3001/lyriql', {
               method: 'POST',
               body: `bad query`
             })
@@ -255,14 +255,14 @@ describe('api', function () {
     context('when a valid POST query is made', function () {
       it('returns the expected result', async function () {
 
-        this.expressApp.use('/harkerql', harkerExpress({
+        this.expressApp.use('/lyriql', expressLyriql({
           schema: this.schema,
           resolver: this.resolver
         }))
 
         const result = await this.page.evaluate(async () => {
           try {
-            const response = await fetch('http://localhost:3001/harkerql', {
+            const response = await fetch('http://localhost:3001/lyriql', {
               method: 'POST',
               body: `{
                 viewer(token: "asdfasdfasdf") {
@@ -285,7 +285,7 @@ describe('api', function () {
     context('when a valid, nonencoded GET query is made', function () {
       it('returns the expected result', async function () {
 
-        this.expressApp.use('/harkerql', harkerExpress({
+        this.expressApp.use('/lyriql', expressLyriql({
           schema: this.schema,
           resolver: this.resolver
         }))
@@ -293,7 +293,7 @@ describe('api', function () {
         const result = await this.page.evaluate(async () => {
           try {
 
-            const url = new URL('http://localhost:3001/harkerql')
+            const url = new URL('http://localhost:3001/lyriql')
             url.search = new URLSearchParams({
               query: `{
                 viewer(token: "asdfasdfasdf") {
@@ -319,7 +319,7 @@ describe('api', function () {
     context('when a valid, encoded GET query is made', function () {
       it('returns the expected result', async function () {
 
-        this.expressApp.use('/harkerql', harkerExpress({
+        this.expressApp.use('/lyriql', expressLyriql({
           schema: this.schema,
           resolver: this.resolver
         }))
@@ -327,7 +327,7 @@ describe('api', function () {
         const result = await this.page.evaluate(async () => {
           try {
 
-            const url = new URL('http://localhost:3001/harkerql')
+            const url = new URL('http://localhost:3001/lyriql')
             url.search = new URLSearchParams({
               query: encodeURIComponent(`{
                 viewer(token: "asdfasdfasdf") {

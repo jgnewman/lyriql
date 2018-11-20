@@ -1,14 +1,14 @@
-# HarkerQL
+# LyriQL
 
-HarkerQL is an alternative to GraphQL designed to make nested data processing easier and more intuitive.
+LyriQL (pronounced "lyrical") is an alternative to GraphQL designed to make nested data processing easier and more intuitive.
 
-In terms of usage it is very similar to GraphQL but it also contains a few key differences. This readme assumes you have never used GraphQL before and does not make comparisons between HarkerQL and GraphQL.
+In terms of usage it is very similar to GraphQL but it also contains a few key differences. This readme assumes you have never used GraphQL before and does not make comparisons between LyriQL and GraphQL.
 
 ## How it works
 
 ### Queries
 
-With HarkerQL, requests made from the front-end describe the shape of the data you want to return from the server, no convoluted API endpoints required!
+With LyriQL, requests made from the front-end describe the shape of the data you want to return from the server, no convoluted API endpoints required!
 
 For example, let's say you want to grab data for a particular user. In a simple case, you might write your query like this:
 
@@ -99,7 +99,7 @@ And just like that, it becomes easier than ever to query data!
 
 ### Getting queries to the server
 
-You'll need to make sure there is a single route on the server allocated to HarkerQL queries. By convention, we normally use `//your-url.com/harkerql`.
+You'll need to make sure there is a single route on the server allocated to LyriQL queries. By convention, we normally use `//your-url.com/lyriql`.
 
 You _don't_ need special handlers for all the possible REST request types since everything you want to happen is specified in your query text. Instead, we normally just default to intercepting the GET or POST method. In fact, if you use the Express middleware, it only allows GET and POST.
 
@@ -115,7 +115,7 @@ const query = `
 }
 `
 
-const response = await fetch('/harkerql', {
+const response = await fetch('/lyriql', {
   method: 'POST',
   body: query
 })
@@ -123,12 +123,12 @@ const response = await fetch('/harkerql', {
 await response.json() // { data: { ... } }
 ```
 
-On the server side, import HarkerQL and funnel post requests on this route to it:
+On the server side, import LyriQL and funnel post requests on this route to it:
 
 ```javascript
-import { handleQuery } from 'harkerql'
+import { handleQuery } from 'lyriql'
 
-YOUR_ROUTER.post('/harkerql', async (req, res) => {
+YOUR_ROUTER.post('/lyriql', async (req, res) => {
   const data = await handleQuery({
     query: req.body,    // <- This is the query text from the front-end
     schema: schema,     // <- We'll talk about this in a second
@@ -143,22 +143,22 @@ YOUR_ROUTER.post('/harkerql', async (req, res) => {
 ```javascript
 import express from 'express'
 import bodyParser from 'body-parser' // <- Because, you know, express
-import { harkerExpress } from 'harkerql'
+import { expressLyriql } from 'lyriql'
 
 const app = express()
 app.use(bodyParser.text())
 
-app.use('/harkerql', harkerExpress({
+app.use('/lyriql', expressLyriql({
   schema: schema,
   resolver, resolver
 }))
 ```
 
-HarkerQL will process the request, run it through your schema and resolver (which we'll discuss momentarily), and hand you back a Promise that resolves with the requested data. When everything goes well, the result has a `data` property (for example, `{ data: <RESPONSE_DATA> }`). If something goes wrong, it will instead have an `error` property (for example, `{ error: <ERROR_TEXT> }`).
+LyriQL will process the request, run it through your schema and resolver (which we'll discuss momentarily), and hand you back a Promise that resolves with the requested data. When everything goes well, the result has a `data` property (for example, `{ data: <RESPONSE_DATA> }`). If something goes wrong, it will instead have an `error` property (for example, `{ error: <ERROR_TEXT> }`).
 
 ### Processing queries
 
-Of course, HarkerQL isn't magic. In order for your queries to work, you have to define what the front-end is allowed to ask for. This is done via 2 objects, namely a **schema** and a **resolver**.
+Of course, LyriQL isn't magic. In order for your queries to work, you have to define what the front-end is allowed to ask for. This is done via 2 objects, namely a **schema** and a **resolver**.
 
 A **schema** object defines the allowed structure for your queries and enforces data types.
 
@@ -167,8 +167,8 @@ A **resolver** contains functions corresponding to the schema that serve to actu
 Both your schema and resolver objects must include a `Root` property at the top level that serves an an entry point. Here's an example schema:
 
 ```javascript
-import harker from 'harkerql'
-const { expect, demand } = harker
+import lyri from 'lyriql'
+const { expect, demand } = lyri
 
 const schema = {
 
@@ -279,7 +279,7 @@ One other thing to note is that `expect` and `demand` treat `Array` differently 
 
 ### Authentication
 
-At this point you should be pretty comfortable with passing parameters to HarkerQL, so the idea of authenticating a user should be pretty straightforward. Where it might start to get tricky is when you need to hold on to context as data gets passed through resolvers. Fortunately, HarkerQL has your back.
+At this point you should be pretty comfortable with passing parameters to LyriQL, so the idea of authenticating a user should be pretty straightforward. Where it might start to get tricky is when you need to hold on to context as data gets passed through resolvers. Fortunately, LyriQL has your back.
 
 Here's an example of an authentication workflow that should get you everything you need:
 

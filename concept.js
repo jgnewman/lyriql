@@ -1,4 +1,4 @@
-// HarkerQL
+// LyriQL
 
 // frontend
 `{
@@ -65,4 +65,4 @@ const resolver = {
     }
   }
 }
-app.use(hql({ schema, resolver }))
+app.use(lql({ schema, resolver }))
