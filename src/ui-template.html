@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>LyriQL</title>
+    <style type="text/css">
+
+      body {
+        margin: 0;
+        font-family: 'gotham', 'open sans', 'helvetica', sans-serif;
+        font-size: 16px;
+      }
+
+      body * {
+        outline: none !important;
+      }
+
+      header {
+        background: #f1f1f1;
+        padding: .5rem 2rem;
+        box-sizing: border-box;
+        max-height: 45px;
+        overflow: hidden;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.5rem;
+        display: inline-block;
+      }
+
+      .normal {
+        font-weight: normal;
+      }
+
+      .byline {
+        font-size: .8rem;
+        float: right;
+        padding-top: .5rem;
+      }
+
+      .pane {
+        margin: 0;
+        position: absolute;
+        top: 45px;
+        width: 50%;
+        height: calc(100% - 45px);
+        box-sizing: border-box;
+        padding: 2rem;
+        font-family: 'fira code', 'monaco', 'consolas', monospace;
+        font-size: 1rem;
+        white-space: pre-wrap;
+      }
+
+      .run-button {
+        position: fixed;
+        bottom: 2rem;
+        right: 50%;
+        transform: translateX(-50%);
+
+        background: #1D486F;
+        color: #ffffff;
+        border: 0;
+        border-radius: 4px;
+        padding: 1rem;
+        transition: all .3s ease;
+        cursor: pointer;
+        font-size: .8rem;
+        font-weight: bold;
+      }
+
+      .run-button:hover {
+        background: purple;
+      }
+
+      .request, .request-mirror {
+        left: 0;
+        background: #ffffff;
+      }
+
+      .request {
+        background: transparent;
+        color: transparent;
+        caret-color: #000000;
+      }
+
+      .request-mirror {
+        color: #1D486F;
+      }
+
+      .response {
+        left: 50%;
+        background: #eaeaea;
+      }
+
+      .comment {
+        font-style: italic;
+        color: #aaaaaa;
+      }
+
+      .string-single, .string-double {
+        color: green;
+      }
+
+      .param, .keyword {
+        color: #F68F00;
+      }
+
+      .number {
+        color: purple;
+      }
+
+      .json-key {
+        color: #1D486F;
+      }
+
+    </style>
+  </head>
+  <body>
+
+    <header>
+      <h1><span class="normal">Welcome to</span> LyriQL</h1>
+      <a class="byline" href="https://npmjs.com/lyriql">npmjs.com/lyriql</a>
+    </header>
+
+    <pre><code id="res" class="pane response"></code></pre>
+    <pre><code id="req-mirror" class="pane request-mirror"></code></pre>
+
+<pre><code id="req" class="pane request" contenteditable="true">{
+  # write your query here
+}</code></pre>
+
+    <button id="run" class="run-button">
+      RUN QUERY
+    </button>
+
+    <script src="//unpkg.com/custom-syntax-highlighter@latest/bin/index.js"></script>
+
+    <script>
+      window.queryPatterns = [
+        {
+          name: 'param',
+          match: [/^([A-z_\$][A-z0-9_\$]*)\:/, '', ':']
+        },
+        {
+          name: 'comment',
+          match: /^(\#[^\n]*)/
+        },
+        {
+          name: 'string-single',
+          match: /^(\'[^\'\n]*\')/
+        },
+        {
+          name: 'string-double',
+          match: /^(\"[^\"\n]*\")/
+        },
+        {
+          name: 'number',
+          match: /^([0-9]+)/
+        },
+        {
+          name: 'keyword',
+          match: /^(true|false|null)\b/
+        }
+      ]
+      window.jsonPatterns = window.queryPatterns.slice(1)
+      window.jsonPatterns.push({
+        name: 'json-key',
+        match: [/^([A-z_\$][A-z0-9_\$]*)\:/, '', ':']
+      })
+    </script>
+
+    <script>
+      const requestPane = document.querySelector('#req')
+      const requestPaneMirror = document.querySelector('#req-mirror')
+      const responsePane = document.querySelector('#res')
+      const runButton = document.querySelector('#run')
+
+      function highlight(selector, patterns) {
+        window.csHighlight({
+          patterns: patterns,
+          selector: selector
+        })
+      }
+
+      function mirrorRequest(persistedValue) {
+        if (persistedValue) {
+          requestPane.innerText = persistedValue
+        }
+        const requestText = requestPane.innerText
+        requestPaneMirror.innerText = requestText
+        highlight('#req-mirror', window.queryPatterns)
+        localStorage.setItem('lyriqlRequestText', requestText)
+      }
+
+      requestPane.addEventListener('input', evt => {
+        mirrorRequest()
+      })
+
+      runButton.addEventListener('click', async () => {
+        const requestText = requestPane.innerText
+        const responseData = await fetch('/lyriql', { method: 'POST', body: requestText })
+        const formattedResponse = await responseData.json()
+        responsePane.innerText = JSON.stringify(formattedResponse, null, 2).replace(/"([^\"]+)"(\:)/g, '$1$2')
+        highlight('#res', window.jsonPatterns)
+      })
+
+      mirrorRequest(localStorage.getItem('lyriqlRequestText'))
+      requestPane.focus()
+    </script>
+  </body>
+</html>

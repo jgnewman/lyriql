@@ -18,12 +18,12 @@ class Expecter {
   }
 
   typeMismatch(node, correctType=this.type) {
-    return `Value for field "${node.label}" does not match type "${correctType}"`
+    return `Value for field "${node.label}" does not match type '${correctType}'`
   }
 
   nullMismatch() {
     const typeName = this.isNative ? this.type.name : this.type
-    return `Cannot return null for type "${typeName}"`
+    return `Cannot return null for type '${typeName}'`
   }
 
   validateNativeType(val) {
@@ -66,11 +66,11 @@ class Validate {
     const specParamKeys = specChunk.params ? Object.keys(specChunk.params) : null
 
     if (!specChunk.params || !specParamKeys.length) {
-      return !paramKeys.length ? OK : `Unexpected parameters provided for field "${node.label}"`
+      return !paramKeys.length ? OK : `Unexpected parameters provided for field '${node.label}'`
     }
 
     if (specParamKeys.length !== paramKeys.length) {
-      return `Wrong number of parameters provided for field "${node.label}"`
+      return `Wrong number of params provided for field '${node.label}'`
     }
 
     let foundProblem = null
@@ -79,11 +79,11 @@ class Validate {
       const typeChecker = specChunk.params[key]
 
       if (!typeChecker) {
-        return foundProblem = `Unexpected parameter "${key}" for field "${node.label}"`
+        return foundProblem = `Unexpected parameter '${key}' for field '${node.label}'`
       }
 
       if (!typeChecker.validateNativeType(val)) {
-        return foundProblem = `Value for parameter "${key}" on field "${node.label}" is of the wrong type`
+        return foundProblem = `Value for parameter '${key}' on field '${node.label}' is of the wrong type`
       }
     })
 
@@ -94,13 +94,13 @@ class Validate {
   // requested piece of spec exists in overall spec
   static specTypeExists(typeChecker, spec) {
     if (typeChecker.isNative || spec[typeChecker.type]) return OK
-    return `Spec does not contain a description of "${typeChecker.type}"`
+    return `Spec does not contain a description of '${typeChecker.type}'`
   }
 
   // requested field exists in a piece of the spec
   static fieldInSpecChunk(node, specChunk) {
     if (specChunk.hasOwnProperty(node.label)) return OK
-    return `Field "${node.label}" does not exist in spec`
+    return `Field '${node.label}' does not exist in spec`
   }
 
   // returned data for field is of correct type

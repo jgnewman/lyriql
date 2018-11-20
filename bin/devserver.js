@@ -1,19 +1,7 @@
-// LyriQL v2
-const { handleQuery, expect, demand } = require('./src/index')
+const express = require('express')
+const bodyParser = require('body-parser')
+const { expressLyriql, expect, demand } = require('../src/index')
 
-// frontend
-const query = `{
-  viewer(token: "asdfasdfasdfadsf") {
-    id
-    name
-    friends {
-      id
-      name
-    }
-  }
-}`
-
-// backend
 const spec = {
 
   Root: {
@@ -42,7 +30,6 @@ const spec = {
     friends: {
       type: demand([ demand('Person') ]),
       resolve: async ({ data }) => {
-        // Theoretically map data.friendIDs and pull person objects
         return [
           {
             id: '2',
@@ -56,10 +43,26 @@ const spec = {
       }
     }
   }
+
 }
 
-const go = async () => {
-  const result = await handleQuery(query, spec)
-  console.log(result)
-}
-go()
+const app = express()
+
+app.use(bodyParser.text())
+
+app.use('/lyriql', expressLyriql(spec, { ui: true }))
+
+app.get('/', (req, res) => {
+  res.send(`
+    <!doctype html>
+    <html>
+      <head></head>
+      <body>
+        <h1>LyriQL Dev Server!</h1>
+      </body>
+    </html>
+  `)
+})
+
+console.log('Dev server listening on port 4000')
+app.listen(4000)

@@ -5,7 +5,9 @@
   "license": "MIT",
   "scripts": {
     "test": "mocha",
-    "gen-parser": "node bin/genparser"
+    "dev": "nodemon bin/devserver",
+    "gen-parser": "node bin/genparser",
+    "run-concept": "node bin/runconcept"
   },
   "devDependencies": {
     "body-parser": "^1.18.3",
@@ -13,6 +15,7 @@
     "cors": "^2.8.5",
     "express": "^4.16.4",
     "jison": "^0.4.18",
-    "mocha": "^5.2.0"
+    "mocha": "^5.2.0",
+    "nodemon": "^1.18.6"
   }
 }

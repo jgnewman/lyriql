@@ -1,3 +1,5 @@
+const fs = require('fs')
+const path = require('path')
 const { Expecter, Demander, OK } = require('./validators')
 const RequestHandler = require('./request-handler')
 
@@ -10,8 +12,7 @@ function expect(type) {
 }
 
 // Raw query handler
-const handleQuery = async (query, spec, req) => {
-
+async function handleQuery (query, spec, req) {
   if (!query || !spec) {
     throw new Error('LyriQL requires query text and a spec object')
   }
@@ -20,18 +21,21 @@ const handleQuery = async (query, spec, req) => {
   return handler.resolveRequest()
 }
 
-const expressLyriql = (spec) => {
-
+function expressLyriql(spec, options={}) {
   if (!spec) {
     throw new Error('LyriQL middleware requires a spec object')
   }
 
   return async (req, res, next) => {
-
     if (req.method !== 'GET' && req.method !== 'POST') {
       res.setHeader('Allow', 'GET, POST');
       res.statusCode = 405
       return res.send({ error: 'LyriQL middleware only supports GET and POST requests' })
+    }
+
+    if (options.ui && req.path === '/ui') {
+      const html = fs.readFileSync(path.resolve(__dirname, './ui-template.html')).toString()
+      return res.send(html)
     }
 
     let query = null
@@ -64,7 +68,6 @@ const expressLyriql = (spec) => {
       res.statusCode = 500
       res.send({ error: err.message ? err.message : err.toString() })
     }
-
   }
 }
 
