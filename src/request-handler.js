@@ -54,14 +54,17 @@ class RequestHandler {
     const typeChecker = this.resolveTypeChecker(specChunk[node.label].type)
 
     const resolvedData = await specChunk[node.label].resolve(localContext, this.requestContext)
+    const resolvedDataIsArray = Array.isArray(resolvedData)
 
     this.errorForProblem(Validate.dataMatchesType(node, resolvedData, typeChecker))
+
+    if (typeChecker.isArray && resolvedDataIsArray) {
+      this.errorForProblem(Validate.fieldsRequestedForObjectArray(node, resolvedData))
+    }
 
     if (!node.body || !node.body.length) {
       return resolvedData
     }
-
-    const resolvedDataIsArray = Array.isArray(resolvedData)
 
     if (!resolvedDataIsArray) {
       return this.resolveNodeBody(node, typeChecker, resolvedData)

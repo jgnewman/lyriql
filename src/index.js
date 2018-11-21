@@ -11,6 +11,15 @@ function expect(type) {
   return new Expecter(type)
 }
 
+function getUI() {
+  return new Promise((resolve, reject) => {
+    const ui = fs.readFile(path.resolve(__dirname, './ui-template.html'), (err, data) => {
+      if (err) return reject(err)
+      return resolve(data.toString())
+    })
+  })
+}
+
 // Raw query handler
 async function handleQuery (query, spec, req) {
   if (!query || !spec) {
@@ -34,8 +43,8 @@ function expressLyriql(spec, options={}) {
     }
 
     if (options.ui && req.path === '/ui') {
-      const html = fs.readFileSync(path.resolve(__dirname, './ui-template.html')).toString()
-      return res.send(html)
+      const ui = await getUI()
+      return res.send(ui)
     }
 
     let query = null
@@ -74,6 +83,7 @@ function expressLyriql(spec, options={}) {
 module.exports = {
   handleQuery,
   expressLyriql,
+  getUI,
   demand,
   expect,
 }

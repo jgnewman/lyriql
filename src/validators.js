@@ -2,6 +2,7 @@ const OK = Symbol.for('LYRIQL_OK_SYMBOL')
 
 function checkNativeType(value, typename) {
   switch (typename) {
+    case 'null': return value === null;
     case 'date': return value instanceof Date;
     case 'array': return Array.isArray(value);
     case 'object': return typeof value === 'object' && !Array.isArray(value)
@@ -18,7 +19,7 @@ class Expecter {
   }
 
   typeMismatch(node, correctType=this.type) {
-    return `Value for field "${node.label}" does not match type '${correctType}'`
+    return `Value for field '${node.label}' does not match type '${correctType}'`
   }
 
   nullMismatch() {
@@ -106,6 +107,12 @@ class Validate {
   // returned data for field is of correct type
   static dataMatchesType(node, rawData, typeChecker) {
     return typeChecker.validate(node, rawData)
+  }
+
+  // user specified which fields to fetch on objects in an array
+  static fieldsRequestedForObjectArray(node, rawData) {
+    if (node.body.length || !checkNativeType(rawData[0], 'object')) return OK
+    return `Query for field '${node.label}' requires a block`
   }
 }
 

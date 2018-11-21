@@ -162,11 +162,21 @@ describe('request-handler', function () {
 
     context('when a resolved piece of data does not match the expected type', function () {
       it('throws an error', async function () {
-        const handler = new RequestHandler(this.query, this.spec)
         this.spec.Root.foo.resolve = () => 123;
+        const handler = new RequestHandler(this.query, this.spec)
         await assert.rejects(async () => {
           const out = await handler.resolveNode(this.node)
-          console.log('hello', out)
+        })
+      })
+    })
+
+    context('when the user did not provide a block for formatting an array of objects', function () {
+      it('throws an error', async function () {
+        this.spec.Root.foo.type = new Expecter([ new Expecter('Person') ])
+        this.spec.Root.foo.resolve = () => [{ name: 'foo' }, { name: 'bar' }];
+        const handler = new RequestHandler(this.query, this.spec)
+        await assert.rejects(async () => {
+          const out = await handler.resolveNode(this.node)
         })
       })
     })

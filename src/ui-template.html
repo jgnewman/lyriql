@@ -127,6 +127,10 @@
         color: #1D486F;
       }
 
+      .json-key-error {
+        color: #D00E35;
+      }
+
     </style>
   </head>
   <body>
@@ -204,6 +208,10 @@
         }
       ]
       window.jsonPatterns = window.queryPatterns.slice(1)
+      window.jsonPatterns.push({
+        name: 'json-key-error',
+        match: [/^(error)\:/, '', ':']
+      })
       window.jsonPatterns.push({
         name: 'json-key',
         match: [/^([A-z_\$][A-z0-9_\$]*)\:/, '', ':']

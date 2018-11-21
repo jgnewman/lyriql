@@ -230,6 +230,39 @@ describe('validators', function () {
         })
       })
     })
+
+    describe('#fieldsRequestedForObjectArray', function () {
+      beforeEach(function () {
+        this.node = { label: 'foo' }
+      })
+
+      context('when the node has subnodes in the body', function () {
+        it('returns OK', function () {
+          this.node.body = [{}, {}]
+          const data = [1, 2]
+          const result = Validate.fieldsRequestedForObjectArray(this.node, data)
+          assert.equal(result, OK)
+        })
+      })
+
+      context('when the node has an empty body but the data is not an array of objects', function () {
+        it('returns OK', function () {
+          this.node.body = []
+          const data = [1, 2]
+          const result = Validate.fieldsRequestedForObjectArray(this.node, data)
+          assert.equal(result, OK)
+        })
+      })
+
+      context('when the node has an empty body but the data is an array of objects', function () {
+        it('returns an error string', function () {
+          this.node.body = []
+          const data = [{}, {}]
+          const result = Validate.fieldsRequestedForObjectArray(this.node, data)
+          assert.ok(/requires a block/.test(result))
+        })
+      })
+    })
   })
 
 })
