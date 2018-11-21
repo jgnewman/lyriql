@@ -1,4 +1,4 @@
-# LyriQL
+![LyriQL](https://raw.githubusercontent.com/jgnewman/lyriql/master/lyriql-logo.png) **BETA**
 
 LyriQL (pronounced "lyrical") is an alternative to GraphQL designed to make nested data processing easier and more intuitive.
 
@@ -248,7 +248,7 @@ app.use('/lyriql', expressLyriql(spec, { ui: true }))
 
 Now if you visit `your-url.com/lyriql/ui`, you'll be given a simple, clean interface where you can type a query on the left, hit the "run" button, and see your result on the right.
 
-![Lyrical UI](https://raw.githubusercontent.com/jgnewman/lyriql/master/lyriql-ui.png)
+![LyriQL UI](https://raw.githubusercontent.com/jgnewman/lyriql/master/lyriql-ui.png)
 
 ### Modifying data
 
