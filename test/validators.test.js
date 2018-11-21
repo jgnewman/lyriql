@@ -122,35 +122,35 @@ describe('validators', function () {
           this.node.params = {a: 'a', b: 123}
           const specChunk = {}
           const result = Validate.validParams(this.node, specChunk)
-          assert.ok(/unexpected parameters provided/i.test(result))
+          assert.ok(/unexpected params provided/i.test(result))
         })
 
         it('params exist in spec chunk but no params provided', function () {
           this.node.params = {}
           const specChunk = { params: { a: new Expecter(String), b: new Expecter(Number) } }
           const result = Validate.validParams(this.node, specChunk)
-          assert.ok(/wrong number of parameters provided/i.test(result))
+          assert.ok(/wrong number of params provided/i.test(result))
         })
 
         it('number of params provided does not match spec chunk', function () {
           this.node.params = {a: 'a', b: 123, c: null}
           const specChunk = { params: { a: new Expecter(String), b: new Expecter(Number) } }
           const result = Validate.validParams(this.node, specChunk)
-          assert.ok(/wrong number of parameters provided/i.test(result))
+          assert.ok(/wrong number of params provided/i.test(result))
         })
 
         it('an unexpected parameter is provided', function () {
           this.node.params = {a: 'a', c: 123}
           const specChunk = { params: { a: new Expecter(String), b: new Expecter(Number) } }
           const result = Validate.validParams(this.node, specChunk)
-          assert.ok(/unexpected parameter/i.test(result))
+          assert.ok(/unexpected param/i.test(result))
         })
 
         it('an provided parameter is of the wrong type', function () {
           this.node.params = {a: 'a', b: 'b'}
           const specChunk = { params: { a: new Expecter(String), b: new Expecter(Number) } }
           const result = Validate.validParams(this.node, specChunk)
-          assert.ok(/value for parameter/i.test(result))
+          assert.ok(/value for param/i.test(result))
         })
       })
     })

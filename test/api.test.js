@@ -254,7 +254,7 @@ describe('api', function () {
             return `{ "error": "${err.toString()}" }`
           }
         })
-        console.log(result)
+
         assert.deepEqual(JSON.parse(result), { data: { id: '1', name: 'John' } })
       })
     })
@@ -284,7 +284,7 @@ describe('api', function () {
             return `{ "error": "${err.toString()}" }`
           }
         })
-        console.log(result)
+
         assert.deepEqual(JSON.parse(result), { data: { id: '1', name: 'John' } })
       })
     })

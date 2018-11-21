@@ -66,7 +66,7 @@ class Validate {
     const specParamKeys = specChunk.params ? Object.keys(specChunk.params) : null
 
     if (!specChunk.params || !specParamKeys.length) {
-      return !paramKeys.length ? OK : `Unexpected parameters provided for field '${node.label}'`
+      return !paramKeys.length ? OK : `Unexpected params provided for field '${node.label}'`
     }
 
     if (specParamKeys.length !== paramKeys.length) {
@@ -79,11 +79,11 @@ class Validate {
       const typeChecker = specChunk.params[key]
 
       if (!typeChecker) {
-        return foundProblem = `Unexpected parameter '${key}' for field '${node.label}'`
+        return foundProblem = `Unexpected param '${key}' for field '${node.label}'`
       }
 
       if (!typeChecker.validateNativeType(val)) {
-        return foundProblem = `Value for parameter '${key}' on field '${node.label}' is of the wrong type`
+        return foundProblem = `Value for param '${key}' on field '${node.label}' is of the wrong type`
       }
     })
 
