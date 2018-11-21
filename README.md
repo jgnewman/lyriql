@@ -236,7 +236,7 @@ When the `resolve` function spits out a user object, LyriQL will automatically t
 
 Notice that each of these fields makes use of a type checker to ensure that they always return the correct type of data. In particular, the `friends` field will only be happy if it returns an array of `Person` objects.
 
-When the `friends` resolver runs, it will fetch a list of user objects from the database and return the raw list. Because the `friends` type checker demands a list of `Person`s, each object in the list will be recursively passed through the `Person` spec in order to properly resolve their respective fields. The recursion doesn't go on forever because our query doesn't request every friend's friends' friends, etc – just one users list of friends.
+When the `friends` resolver runs, it will fetch a list of user objects from the database and return the raw list. Because the `friends` type checker demands a list of `Person`s, each object in the list will be recursively passed through the `Person` spec in order to properly resolve their respective fields. The recursion doesn't go on forever because our query doesn't request every friend's friends' friends, etc – just one user's list of friends.
 
 ## Digging deeper
 
@@ -251,6 +251,19 @@ app.use('/lyriql', expressLyriql(spec, { ui: true }))
 Now if you visit `your-url.com/lyriql/ui`, you'll be given a simple, clean interface where you can type a query on the left, hit the "run" button, and see your result on the right.
 
 ![LyriQL UI](https://raw.githubusercontent.com/jgnewman/lyriql/master/lyriql-ui.png)
+
+You can also manually enable the UI if you are not using Express middleware:
+
+```javascript
+import { getUI } from 'lyriql'
+
+YOUR_ROUTER.on('GET', '/lyriql/ui', async (req, res) => {
+
+  const ui = await getUI()
+  res.send(ui)
+
+})
+```
 
 ### Modifying data
 
