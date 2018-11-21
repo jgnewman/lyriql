@@ -345,6 +345,7 @@ This example gets us a token. Great. But now we want to use that token to fetch 
 
 ```javascript
 // Query text
+// `billingData` will only be viewable for admins
 `
 {
   teamData(token: ${token}) {
@@ -384,7 +385,7 @@ This example gets us a token. Great. But now we want to use that token to fetch 
     }
 
     billingData: {
-      type: expect('BillingData'),
+      type: expect('BillingData'), // Use expect. It's null for non-admins
       resolve: async ({ data }, { viewer }) => {
         if (!viewer.isAdmin) {
           return null
