@@ -114,6 +114,11 @@ class Validate {
     if (node.body.length || !checkNativeType(rawData[0], 'object')) return OK
     return `Query for field '${node.label}' requires a block`
   }
+
+  static typeDoesNotRequireNodeBody(node, typeChecker) {
+    if (typeChecker.isNative || typeChecker.isArray) return OK
+    return `Query for field '${node.label}' requires a block`
+  }
 }
 
 module.exports = {

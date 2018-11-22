@@ -263,6 +263,37 @@ describe('validators', function () {
         })
       })
     })
+
+    describe('#typeDoesNotRequireNodeBody', function () {
+      beforeEach(function () {
+        this.node = { label: 'foo' }
+      })
+
+      context('when the expected type is native', function () {
+        it('returns OK', function () {
+          const typeChecker = new Expecter(String)
+          const result = Validate.typeDoesNotRequireNodeBody(this.node, typeChecker)
+          assert.equal(result, OK)
+        })
+      })
+
+      context('when the expected type is an array', function () {
+        it('returns OK', function () {
+          const typeChecker = new Expecter([ new Expecter('Foo') ])
+          const result = Validate.typeDoesNotRequireNodeBody(this.node, typeChecker)
+          assert.equal(result, OK)
+        })
+      })
+
+      context('when the expected type is a custom spec type', function () {
+        it('returns an error string', function () {
+          const typeChecker = new Expecter('Foo')
+          const result = Validate.typeDoesNotRequireNodeBody(this.node, typeChecker)
+          assert.ok(/requires a block/.test(result))
+        })
+      })
+    })
+
   })
 
 })

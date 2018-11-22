@@ -69,6 +69,8 @@
         font-family: 'fira code', 'monaco', 'consolas', monospace;
         font-size: 1rem;
         white-space: pre-wrap;
+        word-break: break-word;
+        overflow: auto;
       }
 
       .run-button {
@@ -261,6 +263,14 @@
         return localStorage.getItem('lyriqlRequestText')
       }
 
+      function syncWhitespace() {
+        const requestText = getText(requestPane)
+        const beginSpaceMatch = (requestText.match(/^\s+/) || [''])[0]
+        const endSpaceMatch = (requestText.match(/\s+$/) || [''])[0]
+        const mirrorText = requestPaneMirror.innerHTML.trim()
+        requestPaneMirror.innerHTML = beginSpaceMatch + mirrorText + endSpaceMatch
+      }
+
       function mirrorRequest(persistedValue) {
         const requestText = persistedValue || getText(requestPane)
 
@@ -270,6 +280,7 @@
 
         setText(requestPaneMirror, requestText)
         highlight('#req-mirror', window.queryPatterns)
+        syncWhitespace()
         setPersistedValue(requestText)
       }
 
@@ -277,8 +288,13 @@
         return JSON.stringify(json, null, 2).replace(/"([^\"]+)"(\:)/g, '$1$2')
       }
 
-      requestPane.addEventListener('input', evt => {
+      requestPane.addEventListener('input', () => {
         mirrorRequest()
+        requestPaneMirror.scrollTop = requestPane.scrollTop
+      })
+
+      requestPane.addEventListener('scroll', () => {
+        requestPaneMirror.scrollTop = requestPane.scrollTop
       })
 
       runButton.addEventListener('click', async () => {

@@ -110,11 +110,17 @@ describe('request-handler', function () {
 
   describe('#resolveNode', function () {
     beforeEach(function () {
-      this.query = '{ foo }'
+      this.query = '{ foo { name } }'
       this.node = {
         label: 'foo',
         params: {},
-        body: []
+        body: [
+          {
+            label: 'name',
+            params: {},
+            body: []
+          }
+        ]
       }
       this.spec = {
         Root: {
@@ -172,8 +178,21 @@ describe('request-handler', function () {
 
     context('when the user did not provide a block for formatting an array of objects', function () {
       it('throws an error', async function () {
+        this.query = '{ foo }'
+        this.node = { label: 'foo', params: {}, body: [] }
         this.spec.Root.foo.type = new Expecter([ new Expecter('Person') ])
         this.spec.Root.foo.resolve = () => [{ name: 'foo' }, { name: 'bar' }];
+        const handler = new RequestHandler(this.query, this.spec)
+        await assert.rejects(async () => {
+          const out = await handler.resolveNode(this.node)
+        })
+      })
+    })
+
+    context('when the user did not provide a block for formatting an object with a spec type', function () {
+      it('throws an error', async function () {
+        this.query = '{ foo }'
+        this.node = { label: 'foo', params: {}, body: [] }
         const handler = new RequestHandler(this.query, this.spec)
         await assert.rejects(async () => {
           const out = await handler.resolveNode(this.node)

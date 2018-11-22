@@ -63,6 +63,7 @@ class RequestHandler {
     }
 
     if (!node.body || !node.body.length) {
+      this.errorForProblem(Validate.typeDoesNotRequireNodeBody(node, typeChecker))
       return resolvedData
     }
 

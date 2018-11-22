@@ -12,7 +12,8 @@ const spec = {
         return {
           id: '1',
           name: 'John',
-          friendIDs: ['2', '3']
+          friendIDs: ['2', '3'],
+          stats: { hair: 'brown', eyes: 'blue' }
         }
       }
     }
@@ -26,6 +27,10 @@ const spec = {
     name: {
       type: demand(String),
       resolve: async ({ data }) => data.name
+    },
+    stats: {
+      type: demand('Stats'),
+      resolve: async ({ data }) => data.stats
     },
     friends: {
       type: demand([ demand('Person') ]),
@@ -42,8 +47,18 @@ const spec = {
         ]
       }
     }
-  }
+  },
 
+  Stats: {
+    hair: {
+      type: demand(String),
+      resolve: async ({ data }) => data.hair
+    },
+    eyes: {
+      type: demand(String),
+      resolve: async ({ data }) => data.eyes
+    },
+  }
 }
 
 const app = express()
