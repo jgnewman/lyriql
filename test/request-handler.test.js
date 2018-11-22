@@ -146,6 +146,15 @@ describe('request-handler', function () {
       })
     })
 
+    context('when the data is null and it is allowed to be null', function () {
+      it('resolves null', async function () {
+        this.spec.Root.foo.resolve = () => null
+        const handler = new RequestHandler(this.query, this.spec)
+        const result = await handler.resolveNode(this.node)
+        assert.deepEqual(result, null)
+      })
+    })
+
     context('when the required spec chunk is not found in the spec', function () {
       it('throws an error', async function () {
         const handler = new RequestHandler(this.query, this.spec)

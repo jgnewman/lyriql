@@ -6,15 +6,16 @@ const spec = {
 
   Root: {
     viewer: {
-      type: demand('Person'),
+      type: expect('Person'),
       params: { token: demand(String) },
       resolve: async ({ params }, context) => {
-        return {
-          id: '1',
-          name: 'John',
-          friendIDs: ['2', '3'],
-          stats: { hair: 'brown', eyes: 'blue' }
-        }
+        // return {
+        //   id: '1',
+        //   name: 'John',
+        //   friendIDs: ['2', '3'],
+        //   stats: { hair: 'brown', eyes: 'blue' }
+        // }
+        return null
       }
     }
   },

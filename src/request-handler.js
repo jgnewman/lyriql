@@ -58,6 +58,10 @@ class RequestHandler {
 
     this.errorForProblem(Validate.dataMatchesType(node, resolvedData, typeChecker))
 
+    if (resolvedData === null) {
+      return null
+    }
+
     if (typeChecker.isArray && resolvedDataIsArray) {
       this.errorForProblem(Validate.fieldsRequestedForObjectArray(node, resolvedData))
     }
