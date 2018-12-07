@@ -153,6 +153,12 @@ app.use('/lyriql', expressLyriql(spec))
 
 LyriQL will process the request, run it through your spec (which we'll discuss momentarily), and hand you back a Promise that resolves with the requested data. When everything goes well, the result has a `data` property (for example, `{ data: <RESPONSE_DATA> }`). If something goes wrong, it will instead have an `error` property (for example, `{ error: <ERROR_TEXT> }`).
 
+**Note:** If you're using the Express middleware and you opt for the GET request method, you'll need to attach your query string to the `query` parameter:
+
+```javascript
+fetch(`/lyriql?query=${query}`)
+```
+
 ### Processing queries
 
 Of course, LyriQL isn't magic. In order for your queries to work, you have to define what the front-end is allowed to ask for. This is done via a `spec` object.
