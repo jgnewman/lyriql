@@ -1,58 +1,89 @@
 // LyriQL v2
-const { handleQuery, expect, demand } = require('../src/index')
+const { handleGraph } = require('../src/index')
 
 // frontend
-const query = `{
-  viewer(token: "asdfasdfasdfadsf") {
-    id
-    name
-    friends {
-      id
-      name
-    }
-  }
-}`
+const graph = ["::compose",
+  ["fauxCall"],
 
-// backend
-const spec = {
+  ["viewer", {token: "asdfasdfasdf"},
+    "id",
+    "name",
 
-  Root: {
+    ["friends", {start: 0, end: 10},
+      "id",
+      "name",
+      "isAdmin",
+
+      ["::when", {eql: ["isAdmin", true]},
+        "adminId",
+      ],
+    ],
+  ],
+]
+
+// expected outcome
+/*
+{
+  errors: null,
+  data: {
+    fauxCall: {
+      thing1: "x",
+      thing2: "x",
+    },
     viewer: {
-      type: demand('Person'),
-      params: { token: demand(String) },
-      resolve: async ({ params }, context) => {
-        return {
-          id: '1',
-          name: 'John',
-          friendIDs: ['2', '3']
+      id: "x",
+      name: "x",
+      friends: [
+        {
+          id: "x",
+          name: "x",
+          isAdmin: false,
+        },
+        {
+          id: "x",
+          name: "x",
+          isAdmin: true,
+          adminId: "x"
         }
+      ]
+    }.
+  },
+}
+*/
+
+// types
+const types = {
+  Person: {
+    id: {type: "String", resolve: async ({ data }) => data.id},
+    name: {type: "String", resolve: async ({ data }) => data.name},
+    isAdmin: {type: "Boolean", resolve: async ({ data }) => data.isAdmin},
+    friends: {type: ["Person!"], resolve: async ({ data }) => data.friends},
+    adminId: {type: "String", resolve: async ({ data }) => data.adminId},
+  }
+}
+
+// calls
+const queries = {
+  fauxCall: {
+    type: "Object!", // Since this is not a custom type, it won't be run through a resolver. It just returns raw.
+    resolve: async () => {
+      return {
+        thing1: "x",
+        thing2: "x",
       }
-    }
+    },
   },
 
-  Person: {
-    id: {
-      type: demand(String),
-      resolve: async ({ data }) => data.id
-    },
-    name: {
-      type: demand(String),
-      resolve: async ({ data }) => data.name
-    },
-    friends: {
-      type: demand([ demand('Person') ]),
-      resolve: async ({ data }) => {
-        // Theoretically map data.friendIDs and pull person objects
-        return [
-          {
-            id: '2',
-            name: 'Bob'
-          },
-          {
-            id: '3',
-            name: 'Bill'
-          }
-        ]
+  viewer: {
+    type: "Person!",
+    resolve: async ({ args, context }) => {
+      return {
+        id: "x",
+        name: "x",
+        friends: [
+          {id: "1", name: "one", isAdmin: false},
+          {id: "2", name: "two", isAdmin: true, adminId: "three"},
+        ],
       }
     }
   }
@@ -60,7 +91,7 @@ const spec = {
 
 const go = async () => {
   const begin = +new Date
-  const result = await handleQuery(query, spec)
+  const result = await handleGraph(graph, types, queries)
   const end = +new Date
   console.log('\nCompleted in', (end - begin) + 'ms\n')
   console.log(JSON.stringify(result, null, 2))

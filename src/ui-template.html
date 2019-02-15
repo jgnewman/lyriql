@@ -114,12 +114,12 @@
         background: #eaeaea;
       }
 
-      .comment {
+      .comment, .comment-multi {
         font-style: italic;
         color: #aaaaaa;
       }
 
-      .string-single, .string-double {
+      .string-single, .string-double, .string-tick {
         color: green;
       }
 
@@ -141,7 +141,7 @@
 
     </style>
   </head>
-  <body>
+  <body class="lyriql-ui">
 
     <header>
       <svg class="logo" viewBox="0 0 172 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -172,15 +172,15 @@
     <pre><code id="res" class="pane response"></code></pre>
     <pre><code id="req-mirror" class="pane request-mirror"></code></pre>
 
-<textarea id="req" class="pane request">#
-# Type your query into this pane and click the
-# "Run Query" button to execute. The result will
-# show up in the pane on the right.
-#
+<textarea id="req" class="pane request">/*
+Type your query into this pane and click "Run Query"to execute. The result will show up in the pane on the right.
 
-{
-  # Your query...
-}</textarea>
+DO NOT PASTE ANYTHING HERE THAT COULD HARM YOUR COMPUTER. CODE WILL BE EXECUTED.
+*/
+
+[ // Your query...
+
+]</textarea>
 
     <button id="run" class="run-button">
       RUN QUERY
@@ -196,7 +196,11 @@
         },
         {
           name: 'comment',
-          match: /^(\#[^\n]*)/
+          match: /^(\/\/[^\n]*)/
+        },
+        {
+          name: 'comment-multi',
+          match: /^(\/\*(.|\n)*\*\/)/
         },
         {
           name: 'string-single',
@@ -205,6 +209,10 @@
         {
           name: 'string-double',
           match: /^(\"[^\"\n]*\")/
+        },
+        {
+          name: 'string-tick',
+          match: /^(\`[^\`\n]*\`)/
         },
         {
           name: 'number',
@@ -299,7 +307,8 @@
 
       runButton.addEventListener('click', async () => {
         const requestText = getText(requestPane)
-        const responseData = await fetch('/lyriql', { method: 'POST', body: requestText })
+        const serializedText = JSON.stringify(eval(requestText))
+        const responseData = await fetch('/lyriql', { method: 'POST', body: serializedText })
         const jsonResponse = await responseData.json()
         setText(responsePane, formatResponseJSON(jsonResponse))
         highlight('#res', window.jsonPatterns)

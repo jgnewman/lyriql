@@ -1,64 +1,40 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const { expressLyriql, expect, demand } = require('../src/index')
+const { expressLyriql } = require('../src/index')
 
-const spec = {
-
-  Root: {
-    viewer: {
-      type: expect('Person'),
-      params: { token: demand(String) },
-      resolve: async ({ params }, context) => {
-        return {
-          id: '1',
-          name: 'John',
-          friendIDs: ['2', '3'],
-          stats: { hair: 'brown', eyes: 'blue' }
-        }
-        // return null
-      }
-    }
-  },
-
+const types = {
   Person: {
-    id: {
-      type: demand(String),
-      resolve: async ({ data }) => data.id
-    },
-    name: {
-      type: demand(String),
-      resolve: async ({ data }) => data.name
-    },
-    stats: {
-      type: demand('Stats'),
-      resolve: async ({ data }) => data.stats
-    },
-    friends: {
-      type: demand([ demand('Person') ]),
-      resolve: async ({ data }) => {
-        return [
-          {
-            id: '2',
-            name: 'Bob'
-          },
-          {
-            id: '3',
-            name: 'Bill'
-          }
-        ]
+    id: {type: "String", resolve: async ({ data }) => data.id},
+    name: {type: "String", resolve: async ({ data }) => data.name},
+    isAdmin: {type: "Boolean", resolve: async ({ data }) => data.isAdmin},
+    friends: {type: ["Person!"], resolve: async ({ data }) => data.friends},
+    adminId: {type: "String", resolve: async ({ data }) => data.adminId},
+  }
+}
+
+const queries = {
+  fauxCall: {
+    type: "Object!", // Since this is not a custom type, it won't be run through a resolver. It just returns raw.
+    resolve: async () => {
+      return {
+        thing1: "x",
+        thing2: "x",
       }
-    }
+    },
   },
 
-  Stats: {
-    hair: {
-      type: demand(String),
-      resolve: async ({ data }) => data.hair
-    },
-    eyes: {
-      type: demand(String),
-      resolve: async ({ data }) => data.eyes
-    },
+  viewer: {
+    type: "Person!",
+    resolve: async ({ args, context }) => {
+      return {
+        id: "123",
+        name: "Sam Jones",
+        friends: [
+          {id: "1", name: "one", isAdmin: false},
+          {id: "2", name: "two", isAdmin: true, adminId: "three"},
+        ],
+      }
+    }
   }
 }
 
@@ -66,7 +42,7 @@ const app = express()
 
 app.use(bodyParser.text())
 
-app.use('/lyriql', expressLyriql(spec, { ui: true }))
+app.use('/lyriql', expressLyriql(types, queries, { ui: true }))
 
 app.get('/', (req, res) => {
   res.send(`
