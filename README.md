@@ -2,7 +2,7 @@
 
 LyriQL (pronounced "lyrical") is an alternative to GraphQL designed to make nested data processing easier, faster, and more intuitive.
 
-**Note: Version 0.1.0 is essentially a re-write that introduces major breaking changes.**
+**_Note: Version 0.1.0 is essentially a re-write that introduces major breaking changes._**
 
 ![Travis Build](https://travis-ci.org/jgnewman/lyriql.svg?branch=master)
 
