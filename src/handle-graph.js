@@ -1,5 +1,10 @@
 const ensure = require("./ensure")
-const { isPlainObject, isAllowedNativeType, objectLoop } = require("./helpers")
+const {
+  isPlainObject,
+  isAllowedNativeType,
+  objectLoop,
+  buildTypeObject,
+} = require("./helpers")
 
 const comparisons = {
   eql: (value, expected) => value === expected,
@@ -21,17 +26,6 @@ function conditionsPass(conObj, data) {
   })
 }
 
-function buildTypeObject(type) {
-  const endingBang = /\!$/
-  const isArray = Array.isArray(type)
-  const typeName = isArray ? type[0] : type;
-  const isRequired = endingBang.test(typeName)
-  const cleanTypeName = typeName.replace(endingBang, "")
-  const isNative = isAllowedNativeType(cleanTypeName)
-
-  return { name: cleanTypeName, rawName: typeName, isArray, isRequired, isNative }
-}
-
 function collectError(context, graph, err) {
   if (!context.errors) {
     context.errors = []
@@ -48,9 +42,7 @@ async function recursiveGraphHandler(graph, types, queries, req={}, parentData=n
   ensure.valueIsCallName(graph[0])
   ensure.valueIsAllowedQueryName(graph[0], queries)
 
-  // TODO: allow for ::when
-  // TODO: allow collecting some data and some errors
-
+  // If we want to compose calls, compose them and recurse.
   if (graph[0] === "::compose") {
     const composeOut = []
     await Promise.all(graph.slice(1).map(async (composeChild) => {
@@ -68,7 +60,11 @@ async function recursiveGraphHandler(graph, types, queries, req={}, parentData=n
   const children = graph.slice(hasArgs ? 2 : 1)
 
   // Ensure that children are written in the proper format
+  // and that any args match their expected types.
   children.forEach(child => ensure.childTypeOk(child))
+  if (query.expect) {
+    ensure.argsOk(args, query.expect)
+  }
 
   const typeObject = buildTypeObject(query.type)
   const typeName = typeObject.name

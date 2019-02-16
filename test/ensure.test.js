@@ -199,4 +199,73 @@ describe("ensure", function() {
     })
   })
 
+  describe("#argsOk", function() {
+    beforeEach(function() {
+      this.args = { foo: "foo" }
+      this.expected = { foo: "String" }
+    })
+
+    it("does not throw an error", function() {
+      assert.doesNotThrow(() => ensure.argsOk(this.args, this.expected))
+    })
+
+    context("when there are no expectations for arg types", function() {
+      it("does not throw an error", function() {
+        this.expected = {}
+        assert.doesNotThrow(() => ensure.argsOk(this.args, this.expected))
+      })
+    })
+
+    context("when args aren't in the format of an object", function() {
+      it("throws an error", function() {
+        this.args = "foo"
+        assert.throws(() => ensure.argsOk(this.args, this.expected), { name: /^Error$/ })
+      })
+    })
+
+    context("when an expected argument is missing", function() {
+      it("throws an error", function() {
+        this.args = {bar: "bar"}
+        assert.throws(() => ensure.argsOk(this.args, this.expected), { name: /^Error$/ })
+      })
+    })
+
+    context("when a required argument is null", function() {
+      it("throws an error", function() {
+        this.expected = { foo: "String!" }
+        this.args = { foo: null }
+        assert.throws(() => ensure.argsOk(this.args, this.expected), { name: /^Error$/ })
+      })
+    })
+
+    context("when an expected type is an array", function() {
+      beforeEach(function() {
+        this.expected = { foo: ["String"] }
+      })
+
+      context("when the associated argument is not an array", function() {
+        it("throws an error", function() {
+          this.args = {foo: "foo"}
+          assert.throws(() => ensure.argsOk(this.args, this.expected), { name: /^Error$/ })
+        })
+      })
+
+      context("when the a value in the associated array is of the wrong type", function() {
+        it("throws an error", function() {
+          this.args = {foo: [123]}
+          assert.throws(() => ensure.argsOk(this.args, this.expected), { name: /^Error$/ })
+        })
+      })
+    })
+
+    context("when an expected type is not an array", function() {
+      context("when an argument does not match the native type", function() {
+        it("throws an error", function() {
+          this.args = {foo: 123}
+          assert.throws(() => ensure.argsOk(this.args, this.expected), { name: /^Error$/ })
+        })
+      })
+    })
+  })
+
 })

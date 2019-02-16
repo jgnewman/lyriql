@@ -31,6 +31,17 @@ const helpers = {
     }
   },
 
+  buildTypeObject(type) {
+    const endingBang = /\!$/
+    const isArray = Array.isArray(type)
+    const typeName = isArray ? type[0] : type;
+    const isRequired = endingBang.test(typeName)
+    const cleanTypeName = typeName.replace(endingBang, "")
+    const isNative = helpers.isAllowedNativeType(cleanTypeName)
+
+    return { name: cleanTypeName, rawName: typeName, isArray, isRequired, isNative }
+  },
+
 }
 
 module.exports = helpers

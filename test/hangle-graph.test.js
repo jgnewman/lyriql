@@ -63,6 +63,17 @@ describe("handleGraph", function() {
       })
     })
 
+    context("when the a query expects arg types", function() {
+      context("when an arg does not match the expected type", function() {
+        it("returns an error", async function() {
+          this.graph = ["fakeCall", {id: 123}]
+          this.queries.fakeCall.expect = { id: "String" }
+          const result = await handleGraph(this.graph, this.types, this.queries, this.req)
+          assert.ok(result.hasOwnProperty("errors"))
+        })
+      })
+    })
+
     context("when requesting a native data type", function() {
       context("when the data does not match the native type", function() {
         it("returns an error", async function() {

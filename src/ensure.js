@@ -1,4 +1,9 @@
-const { objectLoop, isPlainObject, valueMatchesAllowedNativeType } = require("./helpers")
+const {
+  objectLoop,
+  isPlainObject,
+  valueMatchesAllowedNativeType,
+  buildTypeObject,
+} = require("./helpers")
 
 const err = (msg) => {
   throw new Error(msg)
@@ -7,11 +12,11 @@ const err = (msg) => {
 module.exports = {
 
   valueIsArray(value) {
-    Array.isArray(value) || err(`The value ${value} must be an array.`)
+    Array.isArray(value) || err(`The value "${value}" must be an array.`)
   },
 
   valueIsCallName(value) {
-    (typeof value === "string" && value.length) || err(`The value ${value} must be a call name.`)
+    (typeof value === "string" && value.length) || err(`The value "${value}" must be a call name.`)
   },
 
   valueIsAllowedQueryName(value, allowedQueries) {
@@ -23,12 +28,12 @@ module.exports = {
       return
     }
 
-    err(`The query name ${value} is not allowed.`)
+    err(`The query name "${value}" is not allowed.`)
   },
 
   typeNameIsValidCustomType(cleanTypeName, types) {
     if (!Object.prototype.hasOwnProperty.call(types, cleanTypeName)) {
-      err(`Type name ${cleanTypeName} is not defined.`)
+      err(`Type name "${cleanTypeName}" is not defined.`)
     }
   },
 
@@ -46,12 +51,12 @@ module.exports = {
 
     if (isArray) {
       if (!Array.isArray(data)) {
-        err(`Expected data in the form of an array but got ${dataType} instead.`)
+        err(`Expected data in the form of an array but got "${dataType}" instead.`)
       }
 
       data.forEach(item => {
         if (!valueMatchesAllowedNativeType(item, typeName)) {
-          err(`An item in a data array did not match native type ${typeName}.`)
+          err(`An item in a data array did not match native type "${typeName}".`)
         }
       })
 
@@ -69,11 +74,54 @@ module.exports = {
       return
     }
 
-    err(`Data type ${dataType} does not match expected type ${typeName}.`)
+    err(`Data type "${dataType}" does not match expected type "${typeName}".`)
   },
 
   childTypeOk(value) {
     (typeof value === "string" || Array.isArray(value)) || err(`Children in a graph must be strings or arrays.`)
   },
+
+  argsOk(args, expected) {
+    const hasExpectations = Object.keys(expected).length
+
+    if (!hasExpectations) {
+      return
+    }
+
+    !isPlainObject(args) && err(`Args are missing or were not provided in the form of an object.`)
+
+    objectLoop(expected, (expectedType, name) => {
+
+      if (!args.hasOwnProperty(name)) {
+        err(`Missing expected arg "${name}"`)
+      }
+
+      const arg = args[name]
+      const type = buildTypeObject(expectedType)
+
+      if (type.isRequired && arg === null) {
+        err(`Arg "${name}" can not be null.`)
+      }
+
+      if (type.isArray) {
+        if (!Array.isArray(arg)) {
+          err(`Arg "${name}" must be an array.`)
+        }
+
+        arg.forEach(item => {
+          if (!valueMatchesAllowedNativeType(item, type.name)) {
+            err(`Arg array item does not match type.`)
+          }
+        })
+
+        return
+      }
+
+      if (!valueMatchesAllowedNativeType(arg, type.name)) {
+        err(`Arg "${name}" does not match expected type.`)
+      }
+
+    })
+  }
 
 }

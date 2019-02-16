@@ -295,6 +295,38 @@ const types = {
 
 In this case, our `friends` field must return an array of User objects. To handle that, first we map our theoretical list of friend IDs and grab each one from the database. Then we just return the list. Because the type specification knows that this is supposed to be a list of `User`s, each one of those records will also be automatically filtered through the `User` type.
 
+#### Argument Type Checking
+
+Optionally, you can enforce types on the "args" objects sent within your graphs. To do this, just add an `expect` property to a query or type description. For example:
+
+```javascript
+const queries = {
+  user: {
+    type: "User!",
+    expect: { id: "Number!" },
+    resolve: async ({ args }) => db.getUser(args.id)
+  }
+}
+```
+
+or...
+
+```javascript
+const types = {
+  User: {
+    friends: {
+      type: ["User"],
+      expect: { startIndex: "Number", endIndex: "Number" },
+      resolve: async ({ data, args }) => {
+        const friends = await data.friendIds.map(id => db.getUser(id))
+        friends.sort()
+        return friends.filter((_, index) => index > args.startIndex && index <= args.endIndex)
+      }
+    }
+  }
+}
+```
+
 ## Digging deeper
 
 ### Testing your spec

@@ -1,7 +1,7 @@
 {
   "name": "lyriql",
   "description": "An alternative to GraphQL designed to make nested data processing easier, faster, and more intuitive.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "src/index.js",
   "repository": "git@github.com:jgnewman/lyriql",
   "author": "John <rescuecreative@gmail.com>",

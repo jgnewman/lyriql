@@ -83,4 +83,65 @@ describe("helpers", function() {
     })
   })
 
+  describe("#buildTypeObject", function() {
+    context("when the type is an array", function () {
+      it("sets `isArray` to true", function() {
+        const result = helpers.buildTypeObject(["String"])
+        assert.equal(result.isArray, true)
+      })
+    })
+
+    context("when the type is not an array", function () {
+      it("sets `isArray` to false", function() {
+        const result = helpers.buildTypeObject("String")
+        assert.equal(result.isArray, false)
+      })
+    })
+
+    context("when the type is required", function () {
+      it("sets `isRequired` to true", function() {
+        const result = helpers.buildTypeObject("String!")
+        assert.equal(result.isRequired, true)
+      })
+
+      it("removes `!` from the name of the type", function() {
+        const result = helpers.buildTypeObject("String!")
+        assert.equal(result.name, "String")
+      })
+    })
+
+    context("when the type is required inside an array", function () {
+      it("sets `isRequired` to true", function() {
+        const result = helpers.buildTypeObject(["String!"])
+        assert.equal(result.isRequired, true)
+      })
+
+      it("removes `!` from the name of the type", function() {
+        const result = helpers.buildTypeObject(["String!"])
+        assert.equal(result.name, "String")
+      })
+    })
+
+    context("when the type is not required", function () {
+      it("sets `isRequired` to false", function() {
+        const result = helpers.buildTypeObject("String")
+        assert.equal(result.isRequired, false)
+      })
+    })
+
+    context("when the type is an allowed native type", function () {
+      it("sets `isNative` to true", function() {
+        const result = helpers.buildTypeObject("String")
+        assert.equal(result.isNative, true)
+      })
+    })
+
+    context("when the type is not an allowed native type", function () {
+      it("sets `isNative` to false", function() {
+        const result = helpers.buildTypeObject("NotNative")
+        assert.equal(result.isNative, false)
+      })
+    })
+  })
+
 })

@@ -3,7 +3,7 @@ const { handleGraph } = require('../src/index')
 
 // frontend
 const graph = ["::compose",
-  ["fauxCall"],
+  ["fauxCall", {token: "foo"}],
 
   ["viewer", {token: "asdfasdfasdf"},
     "id",
@@ -57,7 +57,7 @@ const types = {
     id: {type: "String", resolve: async ({ data }) => data.id},
     name: {type: "String", resolve: async ({ data }) => data.name},
     isAdmin: {type: "Boolean", resolve: async ({ data }) => data.isAdmin},
-    friends: {type: ["Person!"], resolve: async ({ data }) => data.friends},
+    friends: {type: ["Person!"], expect: {start: "Number", end: "Number"}, resolve: async ({ data }) => data.friends},
     adminId: {type: "String", resolve: async ({ data }) => data.adminId},
   }
 }
@@ -66,6 +66,7 @@ const types = {
 const queries = {
   fauxCall: {
     type: "Object!", // Since this is not a custom type, it won't be run through a resolver. It just returns raw.
+    expect: { token: "String!" },
     resolve: async () => {
       return {
         thing1: "x",
